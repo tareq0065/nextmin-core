@@ -152,12 +152,12 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] text-neutral-800 selection:bg-emerald-500/30 font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#fcfcfd] text-neutral-800 selection:bg-neutral-900/10 font-sans overflow-x-hidden">
       {/* --- BACKGROUND BLOBS & EXPERIMENTAL GRID --- */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-emerald-400/[0.04] blur-[140px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-400/[0.04] blur-[140px] rounded-full" />
-        <div className="absolute top-[30%] left-[40%] w-[30%] h-[30%] bg-purple-400/[0.02] blur-[120px] rounded-full" />
+        <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-neutral-400/[0.04] blur-[140px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-neutral-400/[0.04] blur-[140px] rounded-full" />
+        <div className="absolute top-[30%] left-[40%] w-[30%] h-[30%] bg-neutral-400/[0.02] blur-[120px] rounded-full" />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_0%,#000_80%,transparent_100%)]" />
       </div>
@@ -182,12 +182,12 @@ export default function Home() {
 
               <h1 className="text-4xl md:text-6xl xl:text-7xl font-black tracking-tighter text-neutral-900 leading-[0.9] mb-6">
                 Backend <br />
-                <span className="text-emerald-500 italic drop-shadow-sm">Infrastructure</span> <br />
+                <span className="text-neutral-900 italic drop-shadow-sm">Infrastructure</span> <br />
                 Simplified.
               </h1>
 
               <p className="text-lg md:text-xl text-neutral-500 leading-relaxed font-semibold max-w-xl">
-                The unified system that turns <span className="text-neutral-900 uppercase tracking-tighter font-black">schemas</span> into <span className="text-neutral-900 underline decoration-emerald-500/30 underline-offset-8">Production Assets</span>.
+                The unified system that turns <span className="text-neutral-900 uppercase tracking-tighter font-black">schemas</span> into <span className="text-neutral-900 underline decoration-neutral-900/10 underline-offset-8">Production Assets</span>.
               </p>
             </motion.div>
 
@@ -205,11 +205,11 @@ export default function Home() {
                   Quick Start
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
               <Link
                 href="/playground"
-                className="px-8 py-3 rounded-2xl border-2 border-neutral-100 bg-white/50 backdrop-blur-xl font-bold text-xs text-neutral-600 transition-all hover:bg-white hover:border-emerald-200 hover:text-emerald-600 shadow-sm active:scale-95"
+                className="px-8 py-3 rounded-2xl border-2 border-neutral-100 bg-white/50 backdrop-blur-xl font-bold text-xs text-neutral-600 transition-all hover:bg-white hover:border-neutral-900 hover:text-neutral-900 shadow-sm active:scale-95"
               >
                 Launch Playground
               </Link>
@@ -242,14 +242,14 @@ export default function Home() {
           <div className="relative h-[600px] hidden lg:flex items-center justify-center">
 
             {/* Floating Decorative Badges */}
-            <FloatingBadge className="top-10 left-0 border-emerald-100 text-emerald-600" delay={0.2} yOffset={15}>
+            <FloatingBadge className="top-10 left-0 border-neutral-100 text-neutral-900" delay={0.2} yOffset={15}>
               <Cpu className="w-3 h-3" /> Auto-Migration
             </FloatingBadge>
-            <FloatingBadge className="top-40 right-10 border-blue-100 text-blue-600" delay={0.6} yOffset={20}>
-              <Database className="w-3 h-3" /> Universal SQL/Mongo
+            <FloatingBadge className="top-40 right-10 border-neutral-100 text-neutral-600" delay={0.6} yOffset={20}>
+              <Database className="w-3 h-3" /> Universal Adapters
             </FloatingBadge>
-            <FloatingBadge className="bottom-20 left-20 border-purple-100 text-purple-600" delay={0.4} yOffset={10}>
-              <Lock className="w-3 h-3" /> RBAC Policy Engine
+            <FloatingBadge className="bottom-20 left-10 border-neutral-100 text-neutral-600" delay={0.4} yOffset={-15}>
+              <Zap className="w-3 h-3" /> Real-time Sync
             </FloatingBadge>
 
             {/* Stacked Cards for depth */}
@@ -274,15 +274,15 @@ export default function Home() {
               <div className="bg-white border-2 border-neutral-100 rounded-[2.5rem] overflow-hidden shadow-[0_64px_128px_-32px_rgba(0,0,0,0.1)]">
                 <div className="px-8 py-6 bg-neutral-50/50 border-b border-neutral-100 flex items-center justify-between">
                   <div className="flex gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-400" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                    <div className="w-3 h-3 rounded-full bg-green-400" />
+                    <div className="w-3 h-3 rounded-full bg-neutral-200" />
+                    <div className="w-3 h-3 rounded-full bg-neutral-200" />
+                    <div className="w-3 h-3 rounded-full bg-neutral-200" />
                   </div>
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Main.ts {"->"} Initialize</span>
                 </div>
                 <div className="p-10 font-mono text-sm space-y-6">
                   <div className="flex gap-4">
-                    <span className="text-emerald-500 font-black">❯</span>
+                    <span className="text-neutral-900 font-black">❯</span>
                     <span className="text-neutral-900 font-bold italic">npm start</span>
                   </div>
 
@@ -292,7 +292,7 @@ export default function Home() {
                       <span className="text-purple-600 font-black">const</span> router = createNextMinRouter(&#123;
                     </div>
                     <div className="text-neutral-800">
-                      &nbsp;&nbsp;schemasDir: <span className="text-emerald-600 font-bold">path.join(process.cwd(), 'schemas')</span>,
+                      &nbsp;&nbsp;schemasDir: <span className="text-neutral-900 font-bold underline decoration-neutral-200 underline-offset-4">path.join(process.cwd(), 'schemas')</span>,
                     </div>
                     <div className="text-neutral-800">
                       &nbsp;&nbsp;dbAdapter: <span className="text-blue-600">new</span> NMAdapter(&#123; ... &#125;)
@@ -349,11 +349,11 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
-                className="group relative p-6 rounded-2xl border-2 border-neutral-50 bg-white hover:border-emerald-100 hover:shadow-2xl hover:shadow-emerald-500/5 transition-all"
+                className="group relative p-6 rounded-2xl border-2 border-neutral-50 bg-white hover:border-neutral-200 hover:shadow-2xl hover:shadow-neutral-900/10 transition-all"
               >
                 <div className={cn(
                   "w-12 h-12 rounded-xl mb-6 flex items-center justify-center transition-all group-hover:scale-110",
-                  item.color === 'emerald' && "bg-emerald-50 text-emerald-600",
+                  item.color === 'emerald' && "bg-neutral-100 text-neutral-900",
                   item.color === 'blue' && "bg-blue-50 text-blue-600",
                   item.color === 'purple' && "bg-purple-50 text-purple-600",
                   item.color === 'orange' && "bg-orange-50 text-orange-600",
@@ -371,14 +371,14 @@ export default function Home() {
         <section className="mt-20 relative py-12 rounded-3xl border-2 border-neutral-50 bg-white overflow-hidden group shadow-sm">
           <div className="absolute inset-0 bg-neutral-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
-            <RefreshCcw className="w-72 h-72 text-emerald-500 animate-[spin_60s_linear_infinite]" />
+            <RefreshCcw className="w-72 h-72 text-neutral-200 animate-[spin_60s_linear_infinite]" />
           </div>
 
           <div className="relative z-10 grid lg:grid-cols-2 gap-10 px-12 md:px-20">
             <div className="space-y-8">
               <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-neutral-900 leading-[0.9]">
                 Universal <br />
-                <span className="text-emerald-500">Compatibility</span>.
+                <span className="text-neutral-900 underline decoration-neutral-200 underline-offset-8 decoration-4">Compatibility</span>.
               </h2>
               <p className="text-lg text-neutral-500 font-medium leading-relaxed italic">
                 "We didn't just build another framework. We built a system that connects your metadata to your infrastructure naturally."
@@ -391,7 +391,7 @@ export default function Home() {
                   "Self-Service Security Policy Engine"
                 ].map(t => (
                   <div key={t} className="flex items-center gap-3 group/item">
-                    <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center transition-transform group-hover/item:scale-110">
+                    <div className="w-6 h-6 rounded-full bg-neutral-900 text-white flex items-center justify-center transition-transform group-hover/item:scale-110">
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
                     <span className="text-base font-black text-neutral-900 uppercase tracking-tighter">{t}</span>
@@ -401,13 +401,13 @@ export default function Home() {
             </div>
             <div className="flex items-center justify-center">
               <div className="relative w-64 h-64">
-                <div className="absolute inset-0 bg-emerald-500/20 blur-[80px] rounded-full" />
+                <div className="absolute inset-0 bg-neutral-900/10 blur-[80px] rounded-full" />
                 <div className="relative z-10 w-full h-full bg-neutral-900 rounded-2xl p-8 flex flex-col items-center justify-between text-white shadow-2xl">
-                  <Zap className="w-12 h-12 text-emerald-400" />
+                  <Zap className="w-12 h-12 text-neutral-400" />
                   <div className="text-center">
                     <div className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500 mb-1">Performance</div>
                     <div className="text-3xl font-black tracking-tighter">99.9%</div>
-                    <div className="text-[9px] font-bold text-emerald-400 mt-1">REAL-TIME UP-TIME</div>
+                    <div className="text-[9px] font-bold text-neutral-400 mt-1">REAL-TIME UP-TIME</div>
                   </div>
                 </div>
               </div>
@@ -432,7 +432,7 @@ export default function Home() {
         {/* --- DARK CTA --- */}
         <section className="mt-32 text-center px-4">
           <div className="relative inline-block w-full group">
-            <div className="absolute inset-0 bg-emerald-500 rounded-[3rem] blur-[60px] opacity-10 group-hover:opacity-20 transition-opacity" />
+            <div className="absolute inset-0 bg-neutral-200 rounded-[3rem] blur-[60px] opacity-10 group-hover:opacity-20 transition-opacity" />
             <div className="relative px-8 py-16 md:px-24 md:py-24 rounded-[3rem] bg-neutral-900 border border-neutral-800 shadow-3xl text-white overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.1),transparent_50%)]" />
 
@@ -454,16 +454,22 @@ export default function Home() {
         {/* --- THE CREATIVE FOOTER --- */}
         <footer className="mt-32 pt-16 pb-12 text-center">
           <div className="flex flex-col items-center gap-16">
-            <div className="text-neutral-900 font-black text-4xl tracking-tighter flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-xl">N</div>
+            <div className="text-neutral-900 font-black text-4xl tracking-tighter flex items-center gap-3">
+              <img
+                src="/logo.svg"
+                alt="NextMin Logo"
+                width={40}
+                height={40}
+                className="transition-all"
+              />
               NextMin
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-12 text-sm font-black uppercase tracking-[0.2em] text-neutral-400">
-              <Link href="/docs/license" className="hover:text-emerald-500 transition-colors">License</Link>
-              <a href="https://github.com/tareq0065/nextmin-core" className="hover:text-emerald-500 transition-colors">GitHub</a>
-              <Link href="/docs/why-nextmin" className="hover:text-emerald-500 transition-colors">Vision</Link>
-              <a href="mailto:hello@gscodes.dev" className="hover:text-emerald-500 transition-colors">Contact</a>
+              <Link href="/docs/license" className="hover:text-neutral-900 transition-colors">License</Link>
+              <a href="https://github.com/tareq0065/nextmin-core" className="hover:text-neutral-900 transition-colors">GitHub</a>
+              <Link href="/docs/why-nextmin" className="hover:text-neutral-900 transition-colors">Vision</Link>
+              <a href="mailto:hello@gscodes.dev" className="hover:text-neutral-900 transition-colors">Contact</a>
             </div>
 
             <div className="flex flex-col items-center gap-4">

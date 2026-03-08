@@ -160,14 +160,14 @@ export default function SchemaManager({ selected, setSelected }: { selected: str
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                     <h2 className="text-lg sm:text-xl font-bold text-neutral-900 flex items-center gap-2">
-                        <Code className="w-5 h-5 text-emerald-500" /> Schema Editor
+                        <Code className="w-5 h-5 text-neutral-900" /> Schema Editor
                     </h2>
                     <p className="text-xs sm:text-sm text-neutral-500 italic">Edit your JSON models to trigger live engine updates.</p>
                 </div>
 
                 <div className="flex items-center gap-3">
                     <select
-                        className="border border-neutral-200 rounded-xl px-4 py-2 bg-neutral-50 text-sm font-semibold text-neutral-700 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                        className="border border-neutral-200 rounded-xl px-4 py-2 bg-neutral-50 text-sm font-semibold text-neutral-700 outline-none focus:ring-2 focus:ring-neutral-900/10 transition-all"
                         value={selected}
                         onChange={(e) => setSelected(e.target.value)}
                     >
@@ -186,7 +186,7 @@ export default function SchemaManager({ selected, setSelected }: { selected: str
             </div>
 
             <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/5 to-blue-500/5 rounded-[2rem] blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute -inset-1 bg-gradient-to-r from-neutral-900/5 to-neutral-700/5 rounded-[2rem] blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
                 <div className="relative w-full h-[500px] border border-neutral-100 rounded-2xl overflow-hidden bg-white shadow-inner">
                     <Editor
                         height="100%"

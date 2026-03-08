@@ -38,7 +38,7 @@ body {
   ol { @apply list-decimal pl-6 mb-4 space-y-2; }
   
   /* Link styling */
-  .nextra-content a { @apply text-emerald-600 hover:underline; }
+  .nextra-content a { @apply text-neutral-900 font-bold underline decoration-neutral-300 hover:decoration-neutral-900 transition-all; }
 }
 
 /* Custom Scrollbar for Playground */
@@ -52,17 +52,17 @@ body {
 }
 
 .playground-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.5); /* emerald-500 */
+  background: rgba(0, 0, 0, 0.2); /* neutral hover */
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 .playground-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.8);
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .playground-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(16, 185, 129, 0.5) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }

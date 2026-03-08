@@ -123,7 +123,7 @@ function DemoContent({ selectedModel }: { selectedModel: string }) {
                                         initial={{ opacity: 0, x: -10 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         key={p.id || i}
-                                        className="bg-white border border-neutral-200 p-3 rounded-lg shadow-sm group hover:border-emerald-200 transition-all cursor-default"
+                                        className="bg-white border border-neutral-200 p-3 rounded-lg shadow-sm group hover:border-neutral-900 transition-all cursor-default"
                                     >
                                         <div className="flex items-center justify-between">
                                             <span className="font-bold text-neutral-800 text-xs">{p.title || p.name || p.id}</span>
@@ -227,7 +227,7 @@ export default function ArchitectureDemo({ selectedModel }: { selectedModel: str
             apiKey={process.env.NEXT_PUBLIC_NEXTMIN_API_KEY || 'playground_key'}
         >
             <div className="bg-white border border-neutral-100 rounded-2xl p-3 sm:p-5 shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-0.5 bg-emerald-500/10" />
+                <div className="absolute top-0 left-0 w-full h-0.5 bg-neutral-900/10" />
                 <DemoContent selectedModel={selectedModel} />
             </div>
         </NextMinProvider>
