@@ -1,0 +1,56 @@
+{
+  "modelName": "Posts",
+  "group": "Contents",
+  "showCount": true,
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "string",
+      "longtext": true,
+      "required": true
+    },
+    "comments": [
+      {
+        "type": "ObjectId",
+        "ref": "Comments"
+      }
+    ]
+  },
+  "allowedMethods": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  },
+  "access": {
+    "public": {
+      "read": true,
+      "create": true,
+      "update": false,
+      "delete": false
+    },
+    "authenticated": {
+      "read": true,
+      "create": true,
+      "update": false,
+      "delete": false
+    },
+    "roles": {
+      "admin": {
+        "read": true,
+        "create": true,
+        "update": true,
+        "delete": true
+      },
+      "superadmin": {
+        "read": true,
+        "create": true,
+        "update": true,
+        "delete": true
+      }
+    }
+  }
+}

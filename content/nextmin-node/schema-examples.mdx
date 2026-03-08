@@ -1,0 +1,249 @@
+---
+title: Define schemas in nextmin-node
+sidebarTitle: Schema guide
+---
+
+> Important: Schema file naming
+>
+> - Schema files must start with a capital letter and be PascalCase, e.g., `Doctors.json`, `Hospitals.json`.
+> - The file name should match the `modelName` value inside the file, e.g., `Doctors.json` → `"modelName": "Doctors"`.
+> - Place your schema files in your configured schemas directory (e.g., `examples/node/schemas/`).
+>
+> Following these conventions ensures consistent model registration and avoids case‑sensitive filesystem issues.
+
+# Define schemas in nextmin-node
+
+This page is a practical, generic guide to write your own schemas. It explains the structure, lists all unique field params supported by the examples, and provides copy‑paste templates.
+
+If you already have working schemas, you can skim to the Field parameters catalog and Full schema template.
+
+## Schema structure
+
+A schema is a JSON object with these top‑level keys:
+
+- modelName: string. The collection/model name.
+- group: string. Used for grouping in UIs.
+- extends: string. Inherit base fields/behavior from another model (e.g. "Users").
+- attributes: object. Field definitions keyed by field name.
+- allowedMethods: flags to enable CRUD endpoints.
+- access: public/authenticated/roles permissions.
+
+## Minimal schema example
+
+```json
+{
+  "modelName": "Posts",
+  "group": "Content",
+  "attributes": {
+    "title": { "type": "string", "required": true },
+    "slug": { "type": "string", "required": true, "unique": true, "populateSlugFrom": "title" },
+    "published": { "type": "boolean", "default": false }
+  },
+  "allowedMethods": { "create": true, "read": true, "update": true, "delete": true },
+  "access": {
+    "public": { "read": true, "create": false, "update": false, "delete": false },
+    "authenticated": { "read": true, "create": true, "update": false, "delete": false },
+    "roles": {
+      "admin": { "read": true, "create": true, "update": true, "delete": true }
+    }
+  }
+}
+```
+
+## Full schema template (with all commonly used params)
+
+Use this as a starting point and remove what you don’t need.
+
+```jsonc
+{
+  "modelName": "ExampleModel",
+  "extends": "Users",                   // optional: inherit from another model
+  "group": "ExampleGroup",
+
+  "attributes": {
+    // BASIC FIELD TYPES
+    "name": { "type": "string", "required": true },
+    "description": { "type": "string", "longtext": true },
+    "age": { "type": "number", "min": 0, "max": 120 },
+    "email": { "type": "email", "required": true, "unique": true },
+    "isActive": { "type": "boolean", "default": false, "index": true },
+
+    // ENUM
+    "status": { "type": "string", "enum": ["draft", "published", "archived"], "default": "draft" },
+
+    // MASKED INPUT (e.g., phone numbers)
+    "phone": { "type": "number", "mask": "+xxx-xxxx-xxxxxx" },
+
+    // RELATIONS (ObjectId)
+    "owner": { "type": "ObjectId", "ref": "Users", "show": "email" },
+    "tags": [{ "type": "ObjectId", "ref": "Tags", "show": "name", "pageSize": 100 }],
+
+    // SCHEDULE / RANGE FIELDS
+    "monday": { "type": "range", "timeOnly": true },
+
+    // FILE UPLOAD FIELDS (store uploaded file ids/paths as strings)
+    "image": [{ "type": "string", "fileTypes": "images/*", "maxFilesCount": 1, "maxFileSize": 2097152 }],
+
+    // ADDRESS AUTOCOMPLETE (paired field)
+    "address": { "type": "string", "populate": "latLng", "countryCodes": ["bd"], "limit": 8 },
+    "latLng": { "type": "string", "hidden": true }
+  },
+
+  "allowedMethods": { "create": true, "read": true, "update": true, "delete": true },
+
+  "access": {
+    "public": { "read": true, "create": false, "update": false, "delete": false },
+    "authenticated": { "read": true, "create": true, "update": false, "delete": false },
+    "roles": {
+      "admin": { "read": true, "create": true, "update": true, "delete": true },
+      "superadmin": { "read": true, "create": true, "update": true, "delete": true }
+    }
+  }
+}
+```
+
+## Field parameters catalog
+
+Below are the unique parameters you can use inside attributes, grouped by purpose.
+
+- Core
+  - type: string | number | boolean | email | ObjectId | range | string (file) | string (address)
+  - required: boolean – value must be present on create/update.
+  - default: any – default value if not provided.
+  - hidden: boolean – stored in DB but hidden from general reads/forms.
+  - longtext: boolean – hints UI to use a textarea/editor for long strings.
+  - populateSlugFrom: string – comma-separated list of field names to auto-generate a slug from (e.g., "title" or "firstName,lastName"). Automatically enforces `required: true`.
+  - rich: boolean – hints UI to use a rich text editor (Tiptap) for this string field. Sanitized on output.
+
+- Validation & indexing
+  - enum: string[] – allowed values for string fields.
+  - min, max: number – numeric bounds (e.g., Ratings.rating).
+  - unique: boolean – unique index constraint (e.g., Districts.slug).
+  - index: boolean – create a secondary index (e.g., Doctors.verified).
+  - mask: string – input mask for number-like fields (e.g., phones).
+  - minLength, maxLength: number – string length constraints (e.g., phone numbers).
+  - pattern: string – regex pattern for string validation.
+
+- Relations (ObjectId)
+  - ref: string – target model name (e.g., "Hospitals").
+  - show: string – which field to display in UI selects (e.g., "name").
+  - pageSize: number – page size for relation pickers (e.g., 64, 2000).
+  - Arrays: wrap the field in `[ { ...params } ]` to allow multiple references.
+
+- Files (stored as strings)
+  - fileTypes: string – MIME pattern, e.g., "images/*".
+  - maxFilesCount: number – limit number of files.
+  - maxFileSize: number – per-file size limit in bytes (2MB = 2097152).
+  - Arrays: represent multi-file inputs.
+
+- Address autocomplete pair
+  - address field: `{ type: "string", populate: "latLng", countryCodes: ["bd"], limit: 8 }`
+  - latLng field: `{ type: "string", hidden: true }`
+  - populate: string – name of the hidden field to auto-fill.
+  - countryCodes: string[] – restrict search to specific countries.
+  - limit: number – max suggestions.
+
+- Schedule/range
+  - type: "range", timeOnly: true – value format `{ start: "HH:mm", end: "HH:mm" }`.
+
+- Repeatable JSON groups
+  - Use a string field with `format: "json-group"` and `repeat: true` to model a repeatable set of sub-fields.
+  - Provide an `attributes` object describing the inner fields. **Recursive support** allows you to nest `json-group` within another `json-group` up to any depth.
+  - Provide an `attributes` object describing the inner fields; you can also set `minItems`/`maxItems`.
+
+  Example:
+
+  ```json
+  {
+    "chambers": {
+      "type": "string",
+      "format": "json-group",
+      "repeat": true,
+      "attributes": {
+        "chamberName": { "type": "string", "required": true },
+        "appointmentPhone": { "type": "string", "required": true },
+        "chamberAddress": { "type": "string", "required": true }
+      },
+      "minItems": 1,
+      "maxItems": 5
+    }
+  }
+  ```
+
+## Access and methods
+
+- allowedMethods: enable or disable CRUD endpoints per model:
+
+```json
+{
+  "allowedMethods": { "create": true, "read": true, "update": true, "delete": true }
+}
+```
+
+- access: define who can do what. You can combine public, authenticated, and granular roles:
+
+```json
+{
+  "access": {
+    "public": { "read": true, "create": false, "update": false, "delete": false },
+    "authenticated": { "read": true, "create": true, "update": false, "delete": false },
+    "roles": {
+      "admin": { "read": true, "create": true, "update": true, "delete": true },
+      "editor": { "read": true, "create": true, "update": true, "delete": false }
+    }
+  }
+}
+```
+
+Notes:
+- Public means unauthenticated requests.
+- Roles are additive; if multiple apply, the most permissive per action wins.
+
+## Extending a base model (inheritance)
+
+You can inherit from another model by adding an `extends` key. A common pattern is `Doctors` extending `Users`.
+
+Example Doctors schema:
+
+```json
+{
+  "modelName": "Doctors",
+  "extends": "Users",
+  "group": "Doctors",
+  "attributes": {
+    "title": { "type": "string", "required": true },
+    "profilePicture": [{ "type": "string", "fileTypes": "images/*", "maxFilesCount": 1, "maxFileSize": 2097152, "required": true }],
+    "phone": { "type": "number", "mask": "+xxx-xxxx-xxxxxx", "required": true },
+    "aboutYou": { "type": "string", "longtext": true, "required": true },
+    "position": { "type": "string", "required": true },
+    "degree": { "type": "string", "required": true },
+    "experienceYears": { "type": "number", "required": true },
+    "licenseNumber": { "type": "string", "required": true },
+    "video": { "type": "string" },
+    "verified": { "type": "boolean", "default": false, "index": true }
+  },
+  "allowedMethods": { "create": true, "read": true, "update": true, "delete": true }
+}
+```
+
+Runtime behavior (server):
+- The child collection stores a private `baseId` linking to its base record; this field is never exposed in schema output or list/detail responses.
+- Create: POST /rest/doctors can include both Users fields (e.g., email, username, password) and Doctors fields. The server splits them, creates Users, then creates Doctors with `baseId` set automatically. You do not need to send `baseId`.
+- Read: GET /rest/doctors and GET /rest/doctors/:id return merged documents: Users + Doctors. If a field exists on both, Doctors wins.
+- Update: PUT /rest/doctors/:id may include Users and/or Doctors fields. The server partitions and updates both sides, then returns the merged doc. Changing `baseId` is not allowed.
+- Delete: Deleting a Doctors record also deletes its linked Users record.
+- Validation: Required checks apply to the model you’re touching (Doctors when creating Doctors) and skip private fields. Unique checks run per collection.
+
+UI behavior (nextmin-react):
+- The SchemaForm hides `baseId` even if policies would expose private fields. When editing an existing record, the hidden `baseId` value is preserved so updates work like a foreign key.
+
+## Tips for designing your schema
+
+- Prefer string IDs for files; use the file upload API to get permanent paths/IDs.
+- For relations, always set both ref and show to get nice selects in UIs.
+- Use unique for slugs or any natural key, and index for frequently filtered fields.
+- Pair address + latLng as shown to enable geocoding while keeping coordinates hidden.
+- If you need user-like fields, consider extends: "Users" as in Doctors.
+- Keep pageSize modest (e.g., 64) for better performance in dropdowns.
+
+That’s it. With the template and parameter catalog above, you have all you need to create your own schema from scratch.

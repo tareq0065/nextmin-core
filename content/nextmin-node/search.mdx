@@ -1,0 +1,184 @@
+---
+title: Cross‑model search (POST /search)
+sidebarTitle: Search API
+---
+
+# Cross‑model search (POST /search)
+
+The /search endpoint lets you query across multiple models at once using a simple, case‑insensitive text search. Results are grouped by model, respect per‑model read permissions, and apply read masks automatically.
+
+- Method: POST
+- Path: /search
+- Auth: x-api-key required;
+- Minimum text length: 2 characters
+
+## Request body
+
+```jsonc
+{
+  "text": "Jhon",                       // required, min length 2, case-insensitive substring
+  "models": ["doctors", "hospitals"], // required; model names (lower/any case allowed)
+  "fields": [                           // required; fields to search (supports dot paths)
+    "name",
+    "address",
+    "speciality.name",
+    "districts.name"
+  ],
+  "select": {                           // optional; per-model projection
+    "doctors": ["name", "specialities"],
+    "hospitals": ["name", "specialities", "districts"]
+  },
+  "searchType": "includes",             // optional; "starts" (default) or "includes" (substring %term% match)
+  "limit": 10                           // optional; per-model result cap (default 10)
+}
+```
+
+Notes:
+- fields accepts dot paths into nested objects/arrays (e.g., speciality.name, districts.name).
+- select is a per-model list of fields to include. If omitted, the default read mask applies.
+- limit applies per model.
+- If a model is missing or the caller is unauthorized to read it, that model’s results array will be empty.
+
+## Response
+
+```jsonc
+{
+  "success": true,
+  "message": "Search results",
+  "data": {
+    "doctors": [ /* masked rows */ ],
+    "hospitals": [ /* masked rows */ ],
+    "videos": [ /* masked rows */ ]
+  }
+}
+```
+
+- Results are grouped by the provided model names (lowercased keys).
+- Documents are masked according to your read policies (readMask or sensitiveMask when exposePrivate is true).
+- For extended schemas (child extends base), the base fields are hydrated and baseId is removed.
+
+## Examples
+
+### curl
+
+```bash
+API=http://localhost:8081/rest
+API_KEY=your_api_key
+
+curl -X POST "$API/search" \
+  -H "x-api-key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "car",
+    "models": ["doctors", "hospitals", "videos"],
+    "fields": ["name", "address", "speciality.name", "districts.name"],
+    "searchType": "includes",
+    "select": {
+      "doctors": ["name", "specialities"],
+      "hospitals": ["name", "specialities", "districts"]
+    },
+    "limit": 10
+  }'
+```
+
+### JavaScript (fetch)
+
+```js
+const API = 'http://localhost:8081/rest';
+const API_KEY = 'your_api_key';
+
+const res = await fetch(`${API}/search`, {
+  method: 'POST',
+  headers: {
+    'x-api-key': API_KEY,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    text: 'car',
+    models: ['doctors', 'hospitals', 'videos'],
+    fields: ['name', 'address', 'speciality.name', 'districts.name'],
+    searchType: 'includes',
+    select: {
+      doctors: ['name', 'specialities'],
+      hospitals: ['name', 'specialities', 'districts']
+    },
+    limit: 10
+  })
+});
+
+const json = await res.json();
+console.log(json);
+```
+
+### Example response (truncated)
+
+```jsonc
+{
+  "success": true,
+  "message": "Search results",
+  "data": {
+    "doctors": [
+      { "id": "...", "name": "Caroline Smith", "specialities": ["Cardiology"] }
+    ],
+    "hospitals": [
+      { "id": "...", "name": "Cardiac Care", "districts": [{ "name": "Dhaka" }] }
+    ],
+    "videos": []
+  }
+}
+```
+
+## Behavior and edge cases
+
+- Validation
+  - text shorter than 2 chars: 400 with message "text must be at least 2 characters".
+  - models not provided or empty: 400 with message about models array.
+  - fields not provided or empty: 400 with message about fields array.
+- Authorization
+  - Each model’s read policy is evaluated. If disallowed, its results array is empty.
+  - Read masks are applied to all returned documents.
+- Adapter behavior
+  - If your DatabaseAdapter implements findMany/count, the query runs in the database using an $or of {$regex: text, i} across the provided fields.
+  - If not, the server falls back to in‑memory filtering and then applies projection/mask.
+- Extended schemas
+  - If a model extends a base, base fields are hydrated; baseId is removed in the response.
+- Projection (select)
+  - When select is provided for a model, only those fields (and id) are returned, subject to read masks.
+
+## Advanced Search Features
+
+### Nested Search (`$nestedSearch`)
+
+The `NMAdapter` and `MongoAdapter` support searching across referenced collections using the `$nestedSearch` operator in standard CRUD list queries.
+
+```json
+{
+  "where": {
+    "speciality": {
+      "$nestedSearch": "Cardio"
+    }
+  }
+}
+```
+
+This efficiently queries the referenced collection (e.g., `Specialities`) and filters the main list based on matching related IDs.
+
+### Search Operators (`^` and `$`)
+
+You can refine your text searches using prefix and postfix operators:
+
+- `^Term`: Matches values that **start with** "Term".
+- `Term$`: Matches values that **end with** "Term".
+- `Term`: Standard substring match (anywhere in the string).
+
+### Automatic Global Search
+
+The global `q` parameter has been enhanced to automatically include `array`, `json`, and `object` fields. This ensures that data stored in complex structures is searchable without manual configuration.
+
+## Tips
+
+- Index frequently searched fields in your database for better performance.
+- Keep select minimal for faster responses and lower payload sizes.
+- Use conservative per-model limit values for responsive UIs (e.g., 5–20).
+
+See also: [REST API examples](/docs/nextmin-node/api-examples) · [Schema guide](/docs/nextmin-node/schema-examples)

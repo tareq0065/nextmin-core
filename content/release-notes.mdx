@@ -1,0 +1,166 @@
+---
+title: Changelogs
+sidebarTitle: Changelogs
+---
+
+# Release notes
+
+## 2026-02-23
+- **Performance & Caching Architecture**:
+  - **QueryCache System**: Introduced a unified caching layer via `keyv` (with out-of-the-box Redis support) to cache `NMAdapter.read` and `count` operations, dropping recurring API latencies from &gt;1s down to &lt;100ms.
+  - **Auto-Invalidation**: Write operations (`create`, `update`, `delete`) now automatically invalidate the cache namespace for the affected collection and its parent schemas.
+  - **Virtual Field Bypass**: Radically optimized sorting and filtering for extended schemas. Queries sorting by `createdAt` or `updatedAt` now execute natively on the child collection table, bypassing costly base-collection memory loads.
+  - **Schema Extension Consistency**: Fixed critical routing bugs where explicitly overridden fields in extended schemas (like `profilePicture` in a `Doctor` extending `User`) were previously discarded or incorrectly merged into the base entity during creations and updates.
+  - **Resilient Default Sorting**: List APIs and the internal Query Engine now gracefully cascade default sorts (`createdAt DESC` -> `_id DESC` -> `id DESC`), ensuring chronological consistency even if a schema lacks a formal createdAt timestamp.
+  - **SQLite Architecture**: Resolved a deep-level TypeORM compatibility flaw by universally mapping MongoDB `ObjectId` references to `varchar` under the SQLite dialect, ensuring seamless local development.
+  - **Includes Search Operator**: Expanded the Cross-Model Search API and generic query parses to explicitly support `searchType=includes`, activating `LIKE %term%` partial string searches across all indexed fields.
+- **nextmin-react: Admin Panel & Datatables**:
+  - **JSON Summarizer Sanitization**: Hardened the `jsonSummary` extraction logic in `DynamicViewer`. It now aggressively filters out stray MongoDB ObjectIDs, Amazon S3 Image URLs, and massive comma-separated arrays to prevent them from leaking into the viewer UI as "supporting text".
+  - **Custom DataTable Actions**: Developers can now seamlessly inject custom localized Action Buttons horizontally into specific rows of the `<DataTableHero>` to trigger external modals, side-effects, or navigation hooks distinct to that document.
+  - **Role-Based Passwords**: The internal user-creation logic now actively monitors selected roles in the UI, conditionally requiring or entirely hiding the password inputs depending on whether the targeted role necessitates explicit credential generation.
+
+## 2026-01-30
+- **Advanced Search & Query Engine**:
+  - **$nestedSearch**: Efficiently search across referenced collections in standard CRUD list queries.
+  - **Regex Operators**: Added support for prefix (`^`) and postfix (`$`) matching in both standard and nested searches.
+  - **Automatic Global Search**: The `q` parameter now automatically indexes `array`, `json`, and `object` fields for a truly "search everything" experience.
+- **Database Maintenance**:
+  - **Cleanup Utility**: Automated identification and removal of unused fields (MongoDB) or columns (SQL) that are no longer present in schemas. Includes a safe confirmation flow in the Admin UI.
+  - **Unified NMAdapter**: Enhanced the primary adapter to handle maintenance tasks across all supported database dialects.
+- **nextmin-react: Enhanced Forms & Views**:
+  - **Recursive JSON Groups**: `SchemaForm` now supports infinite nesting of `json-group` fields with full support for references, dates, and other complex types at any level.
+  - **Rich Text Rendering**: `DynamicViewer` now features secure HTML sanitization and professional `prose` styling for rich text content.
+  - **Validation Sync**: Schema constraints like `minLength`, `maxLength`, and `pattern` are now automatically propagated and enforced by the UI components.
+- **Architecture Evolution**:
+  - **Adapter Deprecations**: Formally deprecated `MongoAdapter` and `InMemoryAdapter` in favor of the universal `NMAdapter` (TypeORM).
+  - **Socket Refresh**: Unified `SchemaService` into the more robust `RealtimeService` for live updates.
+
+## 2026-01-22
+- **Unified Event Architecture**: Transitioned to a granular, namespaced event system.
+  - **Model-Specific Events**: Backend now emits events like `posts:created`, `users:updated`, allowing for precise business logic hooks.
+  - **Refined Socket IO**: Streamlined broadcasting of model-specific events via Socket.io.
+- **nextmin-react**: Performance & Hook Improvements
+  - **Dynamic useRealtime**: Updated the hook to automatically capture any backend event via `onAny`, eliminating the need for hardcoded event lists.
+  - **Granular Dashboard Reloads**: Optimized the dashboard to only refresh individual cards affected by an event, significantly reducing API overhead.
+- **nextmin-node**: Developer Experience
+  - **Logger Development Mode**: Internal logs (info, warn, error) are now strictly hidden in `production` mode and improved stack-trace formatting for dev mode.
+  - **Internal Event Helpers**: Added `getModelEvent` helper to standardize event names across the package.
+
+## 2026-01-21
+- **NextMin Re-architecture**: Event-Driven & Multi-Database Support
+  - **New Database Engine**: Added `NMAdapter` supporting SQLite, PostgreSQL, MySQL, MariaDB, and MongoDB.
+  - **Universal Event System**: Integrated a central `EventEmitter` for global and model-specific hooks (`before:doc:create`, `after:doc:create`, etc.).
+  - **Adapter-Agnostic QueryEngine**: Refactored filtering logic to return standardized Intermediate Representation (IR), ensuring full backward compatibility with `MongoAdapter`.
+  - **Real-time Client/Server**: Replaced legacy sync with a robust Socket.io-based `RealtimeService` and `RealtimeClient`.
+  - **Unified Auth/Session**: Implementation of `AuthClient` for consistent session handling across the React ecosystem.
+  - **Fluent Query Builder**: Added `QueryBuilder` for easy construction of complex filters on the frontend.
+  - **Unit Testing Suite**: Established a formal testing infrastructure using Vitest with 15+ core tests.
+
+- **nextmin-node**: Robust Policy Lookups & Auth Improvements
+  - **Dot-notation Support**: Enhanced policy lookup logic to correctly resolve dot-notated role keys (e.g., `roles.admin`) within the schema's `access` policy.
+  - **Auth Response Enrichment**: Added `roleName` to the user object in `/login` and `/me` responses, simplifying role identification on the frontend.
+- **nextmin-react**: Improved Admin Experience
+  - **SchemaForm Robustness**: Updated privacy bypass logic to use `roleName` and case-insensitive role comparisons.
+  - **Fixed Admin Password Field**: Resolved an issue where the password field was hidden for admin users during account creation due to role name/ID mismatches.
+
+## 2025-12-28
+- nextmin-react: Schema-driven Auto Slug Generation
+  - **Auto-populate**: Introduced `populateSlugFrom` attribute to automatically generate slugs from other fields (e.g., `populateSlugFrom: "title"` or `populateSlugFrom: "firstName,lastName"`).
+  - **Unique Slugs**: Built-in uniqueness handling that appends auto-incrementing suffixes (e.g., `-1`, `-2`) scoped to the model.
+  - **Extended Schema Support**: Can generate slugs using fields inherited from base schemas.
+  - **Smart Validation**: Automatically marks slug fields as `required`.
+- nextmin-react: Reference Select Improvements
+  - **RefMultiSelect**: Added alphabetical sorting for options.
+  - **RefSingleSelect**:
+    - Added search functionality with clear button.
+    - Added alphabetical sorting for options to match multi-select behavior.
+    - Improved state management for better data loading and syncing.
+
+## 2025-12-19
+- nextmin-node: SEO Meta Fields Auto-injection
+  - **Auto-injection**: Automatically injects `meta` field (title, description, keywords, jsonLd) for any schema with `schemaType: "page"`.
+- nextmin-react: UI improvements
+  - **Textarea Support**: Added support for `format: "textarea"` within `json-group` fields.
+  - **Numbered Groups**: Repeated `json-group` items now show numbered headers (e.g., "Chamber 1") for better readability.
+  - **Dependency Update**: Updated `@heroui/react` to latest version.
+
+## 2025-12-10
+- nextmin-react: Advanced Rich Text & Layouts
+  - **Layout Support**: Added 2-column and 3-column layout blocks to the editor.
+  - **Image Improvements**:
+    - Added floating menu for images with alignment and size controls.
+    - Support for `object-fit` (Cover, Contain, Fill) settings.
+    - Improved image resizing experience.
+  - **Grid System**: New Grid extension for complex layouts.
+- nextmin-node: Local File Storage
+  - Introduced `LocalFileStorageAdapter` for storing uploaded files on the local filesystem.
+  - Useful for development environments or simple deployments without S3.
+
+## 2025-12-08
+- nextmin-react: Rich Text Editor Support
+  - Added full support for rich text editing in SchemaForm.
+  - New `rich: true` attribute option for string fields.
+  - Implemented using Tiptap with custom HeroUI styling.
+  - **Slash Command System**: Type `/` to embed other schema data dynamically.
+  - **Schema Embedding**: Supports embedding data as Tables, Grids, or Lists directly in the editor.
+
+## 2025-11-25
+- nextmin-react: Added View Drawer with schema-driven DynamicViewer
+  - New View (eye) icon in list tables opens a right-side Drawer to display row details.
+  - Introduced `useViewDrawer` hook and `DynamicViewer` component for reusable viewing.
+  - Drawer width increased to ~50% of viewport on desktop (full width on mobile).
+- nextmin-react: Privacy and readability improvements
+  - Hides technical keys (`id`, `_id`, `v`, `__v`, `baseId`, `exId`, `__childId`).
+  - Masks password/secret-like fields generically (by key patterns and schema type/format) — never rendered.
+  - For models that extend a base, if `baseId` is hydrated, its fields are merged into the view (the link field is hidden).
+- nextmin-react: Generic JSON summarizer
+  - New `jsonSummary.ts` converts arrays/objects (including JSON stored as strings) into concise, human-friendly strings.
+  - Integrated into table cells and the viewer for consistent display.
+- Docs
+  - Added a new page: Viewer (Drawer) explaining behavior and API.
+  - Updated nextmin-react overview with a link to the viewer docs.
+
+## 2025-10-16
+- nextmin-node: Added cross-model Search API (POST /search)
+  - Search across multiple models by text with per-model select and limit. Results grouped by model and masked by policy.
+  - See docs: /docs/nextmin-node/search
+- nextmin-node: Added file upload APIs
+  - POST /file (API key) for server-to-server uploads.
+  - POST /files (auth) for authenticated user uploads.
+  - DELETE /files/:key to delete an uploaded file by key.
+- nextmin-node: Query and sorting improvements
+  - New parseSort supports +field/-field, multi-field sorts, and only applies a default when none provided.
+  - parseQuery supports fields projection (?fields=a,b), page/limit, and returns a skip value.
+  - Introduced virtual sort keys (createdAt, updatedAt, id, _id).
+  - Added buildPredicateForField to build robust filters for string/number/boolean/date/objectId and arrays.
+- nextmin-react: FileUploader revamped
+  - Supports multiple files, progress, cancel/delete, preview, and validation (maxFilesCount, maxFileSize, fileTypes).
+  - Configurable endpoint and auth headers; maps server response to value.
+- nextmin-react: SchemaForm improvements
+  - Better date/time/range handling (withTime), masked number input, and address autocomplete pairing (address -> latLng).
+- Docs: Updated schema examples to include file fields, repeatable JSON groups, and ref page size.
+
+## 2025-10-09
+- Updated the multiple select with the select values
+- Updated both single and multi select with virtualization
+- Added the fields errors to the create or edit page
+
+## 2025-10-05
+- Resolved extended schema id issue. it won't overlap the child id or _id.
+
+## 2025-10-02
+- Updated schema extending process.
+- Optimized the db adapters for optimizing the db loads.
+
+## 2025-09-27
+- Added schema extending process that any schema can extend any other schema but the nextmin-node will optimize the db tables/docs
+
+## 2025-09-25
+- Docs homepage (docs/app/page.tsx): Enhanced hero copy and added a prominent “Launch Playground” button linking to https://nextmin-playground.gscodes.dev.
+- Docs: Updated release notes.
+
+## Earlier updates
+- Updated settings page
+- Updated auth error
+- Creating example for the public viewers
+- Currently supports mongodb only

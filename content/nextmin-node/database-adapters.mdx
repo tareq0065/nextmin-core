@@ -1,0 +1,120 @@
+---
+title: Database Adapters
+sidebarTitle: Database Adapters
+---
+
+# Database Adapters
+
+NextMin supports multiple database systems through a pluggable adapter architecture.
+
+## NMAdapter
+
+The `NMAdapter` is the recommended adapter for most applications. It supports a wide range of SQL and NoSQL databases.
+
+### Supported Databases
+- SQLite
+- PostgreSQL
+- MySQL / MariaDB
+- Microsoft SQL Server
+- MongoDB
+
+### Basic Configuration (SQLite)
+
+```ts
+import { NMAdapter } from '@airoom/nextmin-node';
+
+const dbAdapter = new NMAdapter({
+  type: 'sqlite',
+  database: 'database.sqlite',
+  synchronize: true, // Auto-sync schema changes
+});
+```
+
+### Multiple Database Connections
+
+While `createNextMinRouter` currently accepts a single primary adapter, you can manage multiple database connections in a single Node.js application by instantiating multiple adapters and using them as needed for specific models or custom business logic.
+
+#### Example: Split DB Strategy
+
+You might want to store system data in SQLite and specialized business data in PostgreSQL.
+
+```ts
+import { NMAdapter, createNextMinRouter } from '@airoom/nextmin-node';
+
+// Primary Adapter (SQLite)
+const primaryAdapter = new NMAdapter({
+  type: 'sqlite',
+  database: 'main.sqlite',
+  synchronize: true,
+});
+
+// Secondary Adapter (PostgreSQL)
+const pgAdapter = new NMAdapter({
+  type: 'postgres',
+  host: 'localhost',
+  username: 'user',
+  password: 'password',
+  database: 'business_data',
+});
+
+async function start() {
+    await primaryAdapter.connect();
+    await pgAdapter.connect();
+
+    // The router uses the primary adapter for all registered schemas
+    const router = createNextMinRouter({
+        dbAdapter: primaryAdapter,
+        // ...
+    });
+    
+    // You can still use the pgAdapter for custom queries or hooks!
+}
+```
+
+## MongoAdapter (Deprecated)
+
+> [!WARNING]
+> The `MongoAdapter` is deprecated. Please migrate to `NMAdapter` with the `mongodb` type for future compatibility and better feature support.
+
+The `MongoAdapter` remains available for legacy applications that strictly require Mongoose-style behavior.
+
+```ts
+import { MongoAdapter } from '@airoom/nextmin-node';
+
+const dbAdapter = new MongoAdapter('mongodb://localhost:27017', 'nextmin_db');
+```
+
+## InMemoryAdapter (Deprecated)
+
+> [!WARNING]
+> The `InMemoryAdapter` is deprecated. For testing and local development, we recommend using `NMAdapter` with `sqlite`.
+
+Ideal for quick, non-persistent prototyping.
+
+```ts
+import { InMemoryAdapter } from '@airoom/nextmin-node';
+
+const dbAdapter = new InMemoryAdapter();
+```
+
+## Database Maintenance
+
+### Cleanup Unused Fields
+
+As your schemas evolve, your database might contain fields (in MongoDB) or columns (in SQL) that are no longer defined in your NextMin schemas. The `cleanupUnusedFields` utility helps you maintain a clean data store.
+
+#### Backend Trigger (CLI/Script)
+
+You can trigger a cleanup programmatically:
+
+```ts
+const report = await dbAdapter.cleanupUnusedFields(schemas);
+console.log('Cleanup complete:', report);
+```
+
+#### Admin UI Integration
+
+The standard NextMin Admin UI (`nextmin-react`) includes a **"Cleanup Database"** button in the **Settings** view, which triggers this utility via a protected API endpoint.
+
+> [!CAUTION]
+> This operation is destructive. It permanently removes data from fields and columns not present in your current schemas. Always backup your database before running a cleanup.

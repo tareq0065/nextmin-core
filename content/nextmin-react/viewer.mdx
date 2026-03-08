@@ -1,0 +1,125 @@
+---
+title: Viewer (Drawer)
+sidebarTitle: Viewer (Drawer)
+description: Schema-driven row viewer with a HeroUI Drawer, JSON summarization, baseId merge, and secret masking.
+---
+
+# Viewer (Drawer)
+
+The table now includes a View action that opens a right-side Drawer to display a record’s details. The viewer is schema-driven and reusable (also available as a hook), with smart formatting for images, nested objects/arrays, and raw JSON stored as strings.
+
+## What it does
+
+- Adds a View (eye) icon to the actions column in list tables
+- Opens a HeroUI Drawer on the right (~50% width on desktop, full width on mobile)
+- Renders field values using your schema order and hides private/system fields
+- Masks any password/secret-like fields (never rendered)
+- If a schema extends a base, and the row contains a hydrated `baseId` object, its fields are merged into the view (link field itself is hidden)
+- Summarizes raw JSON arrays/objects into readable text (e.g., a list of “Chamber — Address, Visiting…”)
+
+## Where it lives
+
+- Hook: `packages/nextmin-react/src/components/viewer/useViewDrawer.tsx`
+- Component renderer: `packages/nextmin-react/src/components/viewer/DynamicViewer.tsx`
+- Table integration: `packages/nextmin-react/src/views/list/DataTableHero.tsx`
+- Page wiring: `packages/nextmin-react/src/views/ListPage.tsx`
+
+## Quick start
+
+The integration is already done for the built-in List page. If you want to use the viewer elsewhere, use the `useViewDrawer` hook:
+
+```text
+// useViewDrawer is provided by nextmin-react
+// import { useViewDrawer } from '@airoom/nextmin-react';
+
+// Example usage (pseudo-code):
+// const { open, ViewDrawerPortal } = useViewDrawer();
+// return (
+//   <>
+//     <ViewDrawerPortal />
+//     <button onClick={() => open({ title, model, schema, data: row })}>View</button>
+//   </>
+// );
+```
+
+In the built-in List page, we also merge `baseId` object fields into the row for viewing (when present) and compute a merged schema if the model extends a base.
+
+## Formatting rules
+
+- Ordering: Fields are shown in the order defined by the schema.
+- Hidden fields: `id`, `_id`, `v`, `__v`, `baseId`, `exId`, `__childId` are hidden automatically.
+- Private attributes: Any attribute marked `private: true` is not shown.
+- Password/secret masking: Keys that equal or contain `password`, `pwd`, `passwd`, `passcode`, or `secret` are never displayed. Attributes with `type: 'password'` or `format: 'password'` are also hidden.
+- Images: Image-like values or URLs render as thumbnails with links.
+- Rich Text: Values from fields with `rich: true` are rendered as sanitized HTML with full theme support (using Tailwind Typography).
+- Objects/arrays: Shown in a readable, compact form. When possible, objects are summarized as `Primary — secondary, tertiary` using common label keys like `name`, `title`, `label`, `display`, `show`, `value`, or `*Name` suffixes.
+- Deep Attribute Propagation: The viewer recursively passes schema metadata down to nested objects and arrays. This ensures that even inside complex data structures, rich text and other special formats are rendered correctly according to your schema.
+- Raw JSON strings: Strings starting with `{` or `[` are parsed and summarized using the same logic.
+
+## Drawer sizing
+
+- Desktop (md+): Drawer width is constrained to about 50% of viewport.
+- Mobile: Drawer uses full width for readability.
+
+## API reference
+
+### useViewDrawer
+
+```text
+type OpenViewParams = {
+  title?: string;
+  model?: string;
+  schema?: SchemaDef;
+  data: Record<string, any>;
+};
+
+function useViewDrawer(): {
+  open: (params: OpenViewParams) => void;
+  close: () => void;
+  ViewDrawerPortal: React.FC;
+}
+```
+
+- Render `<ViewDrawerPortal />` once near the root of your page/component tree.
+- Call `open({ title, model, schema, data })` to show the viewer.
+
+### DynamicViewer
+
+```text
+<DynamicViewer schema={schema} data={row} />
+```
+
+Renders the details grid with the rules listed above. You rarely need to import this directly; the Drawer uses it internally.
+
+## JSON summarization examples
+
+Input (string in DB):
+
+```json
+[
+  {
+    "chamberName": "Ibn Sina",
+    "chamberAddress": "Utara",
+    "visitingHourAndOffDays": "5 pm to 12 am",
+    "appointmentNumber": "213234324",
+    "consultationFee": "720"
+  },
+  {
+    "chamberName": "Ibn Sina",
+    "chamberAddress": "Mirpur",
+    "visitingHourAndOffDays": "3pm to 8 pm",
+    "appointmentNumber": "43534534535",
+    "consultationFee": "1000"
+  }
+]
+```
+
+Display:
+
+- Table cell: `Ibn Sina — Utara, 5 pm to 12 am, Ibn Sina — Mirpur, 3pm to 8 pm` (truncated)
+- Drawer: one line per object (e.g., `Ibn Sina — Utara, 5 pm to 12 am`)
+
+## Extensibility
+
+- The summarization rules are centralized in `views/list/jsonSummary.ts`. You can adjust the `SUPPORT_PRIORITY` list to tweak which secondary details are emphasized.
+- You can enhance reference handling to fetch/display labels for plain ID values if needed.

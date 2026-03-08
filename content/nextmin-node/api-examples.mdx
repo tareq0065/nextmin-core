@@ -1,0 +1,443 @@
+---
+title: REST API examples (nextmin-node)
+sidebarTitle: API examples
+---
+
+# REST API examples for nextmin-node
+
+This page demonstrates how to call the REST API exposed by nextmin-node.
+
+See also: [Cross‑model Search API →](/docs/nextmin-node/search)
+
+Assumptions:
+- Base URL: http://localhost:8081/rest
+- All requests must include the x-api-key header (value from your DB → Settings.apiKey)
+- Authenticated routes also require Authorization: Bearer YOUR_JWT
+
+## Headers
+
+- x-api-key: your_api_key_here
+- Content-Type: application/json for JSON bodies
+- Authorization: Bearer YOUR_JWT for authenticated endpoints
+
+Example header block used below:
+
+```http
+x-api-key: YOUR_API_KEY
+Authorization: Bearer YOUR_JWT
+Content-Type: application/json
+```
+
+Tip: You can obtain the API key by starting the server once, then reading the Settings collection/table → apiKey field.
+
+## Schemas
+
+List public schema definitions the server is using:
+
+```bash
+curl -H "x-api-key: $API_KEY" \
+  http://localhost:8081/rest/_schemas
+```
+
+Response shape (example):
+
+```json
+{
+  "success": true,
+  "data": [
+    { "modelName": "Users", "attributes": { "email": { "type": "String" } } },
+    { "modelName": "Posts", "attributes": { "title": { "type": "String" } } }
+  ]
+}
+```
+
+## Auth endpoints
+
+Base path: /auth/users
+
+### Register
+
+```bash
+curl -X POST http://localhost:8081/rest/auth/users/register \
+  -H "x-api-key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alice@example.com",
+    "username": "alice",
+    "password": "supersecret123"
+  }'
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "message": "Registration successful.",
+  "data": { "token": "<JWT>", "user": { "id": "...", "email": "alice@example.com", "username": "alice", "status": "active" } }
+}
+```
+
+### Login (email or username)
+
+```bash
+curl -X POST http://localhost:8081/rest/auth/users/login \
+  -H "x-api-key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alice@example.com",
+    "password": "supersecret123"
+  }'
+```
+
+Success returns `{ token, user }`. The token expires in 7 days.
+
+### Current user (me)
+
+```bash
+curl http://localhost:8081/rest/auth/users/me \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT"
+```
+
+### Change password
+
+```bash
+curl -X POST http://localhost:8081/rest/auth/users/change-password \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT" \
+  -H "Content-Type: application/json" \
+  -d '{ "oldPassword": "supersecret123", "newPassword": "newsecret456" }'
+```
+
+### Forgot password
+
+```bash
+curl -X POST http://localhost:8081/rest/auth/users/forgot-password \
+  -H "x-api-key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "alice@example.com" }'
+```
+
+Returns a generic success message without revealing user existence.
+
+## Generic CRUD per model
+
+Model base path: /:model (lowercase). The routes are auto-generated from your JSON schemas and policy‑enforced.
+
+Common responses include `{ success, message, data, pagination? }`.
+
+### Create (POST /:model)
+
+```bash
+curl -X POST http://localhost:8081/rest/posts \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT" \
+  -H "Content-Type: application/json" \
+  -d '{ "title": "Hello", "content": "World" }'
+```
+
+- Validates required fields and unique constraints.
+- For users model, password is automatically hashed on create.
+
+### List (GET /:model)
+
+Query parameters supported by the list endpoint:
+- page: number (default 0)
+- limit: number (default 10)
+- Search helpers:
+  - q: the search term/value
+  - searchKey: field name to search in (single)
+  - searchKeys: CSV of fields to search in (multi)
+  - searchMode: and|or (defaults to or)
+- Date range:
+  - dateFrom: ISO or parseable date
+  - dateTo: ISO or parseable date
+  - dateKey: which date field to use (defaults to createdAt, then updatedAt)
+- Sorting (multi-field):
+  - sort: CSV of field names, e.g. name,createdAt
+  - sortType: CSV of directions (asc|desc), matched by position
+- Advanced Filtering (`where`):
+  - Pass a JSON object to the `where` parameter for complex queries.
+  - `$nestedSearch`: Search across referenced collections. e.g. `where={"speciality":{"$nestedSearch":"Cardio"}}`
+- Search Operators:
+  - `^`: Prefix search. e.g. `q=^Alice`
+  - `$`: Postfix search. e.g. `q=Smith$`
+
+Example:
+
+```bash
+curl "http://localhost:8081/rest/posts?limit=20&page=0&sort=createdAt&sortType=desc&q=hello&searchKeys=title,content" \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT"
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "message": "Data fetched for Posts",
+  "data": [ { "id": "...", "title": "Hello" } ],
+  "pagination": { "totalRows": 1, "page": 0, "limit": 20 },
+  "sort": { "createdAt": -1 }
+}
+```
+
+Field‑specific filters are also supported by passing query params matching attribute types. Examples:
+- String: name=Alice (regex, case‑insensitive)
+- Number: age=30 (or CSV for $in)
+- Boolean: active=true
+- ObjectId/ref: user=6523... or user=ID1,ID2
+- Date: createdAt=2024-12-31
+
+### Read one (GET /:model/:id)
+
+```bash
+curl http://localhost:8081/rest/posts/ID123 \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT"
+```
+
+### Update (PATCH /:model/:id)
+
+```bash
+curl -X PATCH http://localhost:8081/rest/posts/ID123 \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT" \
+  -H "Content-Type: application/json" \
+  -d '{ "title": "Updated" }'
+```
+
+- Only validates required fields if you send the field with an empty value (so omitted fields remain unchanged).
+
+### Delete (DELETE /:model/:id)
+
+```bash
+curl -X DELETE http://localhost:8081/rest/posts/ID123 \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT"
+```
+
+## Relationship queries
+
+These help you load referenced documents without relying on autopopulate.
+
+### Forward: items referenced by a container document
+
+GET /find/:container/:refField/:id
+
+- container: model holding the reference field
+- refField: the field on container that references the target model
+- id: the container record id
+
+```bash
+curl "http://localhost:8081/rest/find/orders/items/ORDER_ID?limit=50&page=1&fields=name,price&sort=-createdAt" \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT"
+```
+
+Supports query params:
+- limit (max 100), page (1‑based), fields (CSV projection), sort (e.g., -createdAt,+name)
+
+### Reverse: items that point to a given id
+
+GET /find/reverse/:target/:byField/:id
+
+- target: the target model to read
+- byField: the reference field on target that points to another model
+- id: the id to match (contained within byField or equal to it)
+
+```bash
+curl "http://localhost:8081/rest/find/reverse/items/order/ORDER_ID?limit=20&page=1&fields=name,price&sort=-createdAt" \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT"
+```
+
+## Extended models (extends)
+
+Example: Doctors extends Users.
+
+### Create a doctor (payload can include Users + Doctors fields)
+
+```bash
+curl -X POST http://localhost:8081/rest/doctors \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "doc1@example.com",
+    "username": "doc1",
+    "password": "secret123",
+    "title": "Professor",
+    "phone": "+880-1234-567890",
+    "aboutYou": "Cardiologist",
+    "experienceYears": 10,
+    "licenseNumber": "LIC-001"
+  }'
+```
+
+- Server automatically creates a Users record, then a Doctors record linked via a hidden baseId.
+- Response is a merged object of Users + Doctors (without baseId).
+
+### List doctors (merged read)
+
+```bash
+curl "http://localhost:8081/rest/doctors?limit=20&page=0&sort=createdAt&sortType=desc" \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT"
+```
+
+Each item is merged from Users + Doctors; `baseId` is removed.
+
+### Get doctor by id (merged read)
+
+```bash
+curl http://localhost:8081/rest/doctors/ID123 \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT"
+```
+
+### Update doctor (you may send both base and child fields)
+
+```bash
+curl -X PUT http://localhost:8081/rest/doctors/ID123 \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT" \
+  -H "Content-Type: application/json" \
+  -d '{ "title": "Senior Professor", "email": "doc1-new@example.com" }'
+```
+
+- The server partitions the payload, updates Users and Doctors accordingly, and returns the merged doc.
+
+### Delete doctor (also deletes base user)
+
+```bash
+curl -X DELETE http://localhost:8081/rest/doctors/ID123 \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT"
+```
+
+### Relationship find routes hydrate extended targets
+
+- Forward: `/find/:container/:refField/:id`
+- Reverse: `/find/reverse/:target/:byField/:id`
+
+If the target model extends another, the items in the result are hydrated by merging with their base via `baseId` before masking.
+
+## Files (if file storage adapter is configured)
+
+### Upload files (multipart)
+
+POST /files
+
+```bash
+curl -X POST http://localhost:8081/rest/files \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT" \
+  -F "file=@/path/to/photo.jpg" \
+  -F "file=@/path/to/another.png"
+```
+
+Response includes provider, bucket, key, url, contentType, size, etc.
+
+### Delete a file by key
+
+DELETE /files/:key(*)
+
+```bash
+curl -X DELETE "http://localhost:8081/rest/files/uploads/2025/09/23/abcd1234.jpg" \
+  -H "x-api-key: $API_KEY" \
+  -H "Authorization: Bearer $JWT"
+```
+
+## Event System (Node.js)
+
+`nextmin-node` includes a central event system based on `EventEmitter`. It allows you to hook into CRUD and system operations directly on the backend. This is the foundation for our real-time synchronization and allows you to build custom business logic (e.g., sending emails or triggering external APIs) tied to your data lifecycle.
+
+### Universal Events
+You can subscribe to global events using the `Events` constants:
+
+```ts
+import { events, Events } from '@airoom/nextmin-node';
+
+events.on(Events.AFTER_CREATE, (payload) => {
+  console.log(`[EVENT] New ${payload.modelName} created:`, payload.result);
+});
+```
+
+Common event constants:
+- `Events.BEFORE_CREATE`, `Events.AFTER_CREATE`
+- `Events.BEFORE_UPDATE`, `Events.AFTER_UPDATE`
+- `Events.BEFORE_DELETE`, `Events.AFTER_DELETE`
+- `Events.SCHEMA_UPDATE` (triggered on schema hot‑reloading)
+- `Events.SERVER_START`
+
+### Internal Model-Specific Listeners
+Starting in <Version />, you can also subscribe to **granular, model-specific** events for more precise handling. These follow the format `modelName:phase:action`.
+
+```ts
+// Triggers ONLY when a new Post is created
+events.on('posts:after:create', (payload) => {
+  console.log(`A new post titled "${payload.result.title}" was created!`);
+});
+
+// Triggers ONLY when a user profile is updated
+events.on('users:after:update', (payload) => {
+  // payload includes: { modelName, id, data, result }
+});
+```
+
+This granular approach keeps your event-driven architecture clean and performant by avoiding giant `if(modelName === ...)` blocks.
+
+## JavaScript fetch examples
+
+```ts
+const BASE = 'http://localhost:8081/rest';
+const API_KEY = process.env.NEXT_PUBLIC_NEXTMIN_API_KEY!; // or NEXTMIN_API_KEY server-side
+
+async function login(email: string, password: string) {
+  const res = await fetch(`${BASE}/auth/users/login`, {
+    method: 'POST',
+    headers: { 'x-api-key': API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json?.message || 'Login failed');
+  return json.data.token as string;
+}
+
+async function listPosts(jwt: string) {
+  const res = await fetch(`${BASE}/posts?limit=20&page=0&sort=createdAt&sortType=desc`, {
+    headers: { 'x-api-key': API_KEY, Authorization: `Bearer ${jwt}` },
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json?.message || 'Fetch failed');
+  return json.data;
+}
+```
+
+## Notes on authorization and policies
+
+- Every request must pass a valid x-api-key or it returns 401.
+- Most routes also enforce JWT auth; auth-free reads depend on your schema access config.
+- Read responses are masked according to your schema’s readMask/sensitiveMask and the requester’s role.
+- Create/Update/Delete are restricted by role/owner rules declared in your JSON schema (access section).
+
+## Default admin credentials (after setup)
+
+After first setup you may sign in with:
+- Email: super@example.com
+- Username: superadmin
+- Password: supersecurepassword
+
+Change the password immediately after first login.
+
+## Error handling
+
+- 400: Validation or bad request (e.g., missing required fields, duplicates)
+- 401: Missing/invalid API key or JWT
+- 403: Forbidden by policy
+- 404: Not found
+- 405: Method not allowed for that model
+- 410: Model removed (hot‑reloaded schema)

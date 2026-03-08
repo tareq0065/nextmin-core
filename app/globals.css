@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Base Styles for Documentation Headings (Tailwind 4 Reset Fix) */
+@layer base {
+  h1 { @apply text-4xl font-black mb-6 mt-8 tracking-tight; }
+  h2 { @apply text-3xl font-bold mb-4 mt-10 tracking-tight border-b border-neutral-100 pb-2; }
+  h3 { @apply text-2xl font-bold mb-3 mt-8 tracking-tight; }
+  h4 { @apply text-xl font-bold mb-2 mt-6 tracking-tight; }
+  
+  /* Ensure paragraph and list readability */
+  p { @apply mb-4 leading-relaxed; }
+  ul { @apply list-disc pl-6 mb-4 space-y-2; }
+  ol { @apply list-decimal pl-6 mb-4 space-y-2; }
+  
+  /* Link styling */
+  .nextra-content a { @apply text-emerald-600 hover:underline; }
+}
+
+/* Custom Scrollbar for Playground */
+.playground-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.playground-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.playground-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.5); /* emerald-500 */
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.playground-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.8);
+}
+
+.playground-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, 0.5) transparent;
+}

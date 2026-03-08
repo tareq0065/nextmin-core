@@ -1,0 +1,55 @@
+---
+title: Storage Adapters
+sidebarTitle: Storage Adapters
+---
+
+# Storage Adapters
+
+Nextmin Node provides a pluggable file storage system. When initializing the `createNextMinRouter`, you must pass a `fileStorageAdapter`.
+
+We provide built-in adapters for AWS S3 (and compatible services) and local file system storage.
+
+## Local Filesystem (New)
+
+The `LocalFileStorageAdapter` stores uploaded files in a local directory. This is ideal for development or simple self-hosted deployments.
+
+### Usage
+
+```ts
+import { LocalFileStorageAdapter } from '@airoom/nextmin-node';
+import path from 'path';
+
+const fileStorageAdapter = new LocalFileStorageAdapter({
+  // Directory where files will be saved
+  uploadDir: path.join(__dirname, 'public/uploads'),
+  // Base URL for accessing the files
+  baseUrl: 'http://localhost:3000/uploads',
+});
+
+const nextminRouter = createNextMinRouter({
+  // ... other options
+  fileStorageAdapter,
+});
+```
+
+## S3 (AWS / MinIO)
+
+The `S3FileStorageAdapter` allows you to store files in any S3-compatible service.
+
+### Usage
+
+```ts
+import { S3FileStorageAdapter } from '@airoom/nextmin-node';
+
+const fileStorageAdapter = new S3FileStorageAdapter({
+  bucket: process.env.S3_BUCKET,
+  region: process.env.S3_REGION,
+  credentials: {
+    accessKeyId: process.env.S3_ACCESS_KEY_ID,
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+  },
+  // Optional: Custom endpoint (e.g. for MinIO)
+  endpoint: process.env.S3_ENDPOINT,
+  forcePathStyle: true,
+});
+```

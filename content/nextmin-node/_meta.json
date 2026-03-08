@@ -1,0 +1,23 @@
+{
+  "index": {
+    "title": "Overview"
+  },
+  "api-examples": {
+    "title": "API examples"
+  },
+  "search": {
+    "title": "Search API"
+  },
+  "events": {
+    "title": "Event System"
+  },
+  "storage": {
+    "title": "Storage Adapters"
+  },
+  "database-adapters": {
+    "title": "Database Adapters"
+  },
+  "schema-examples": {
+    "title": "Schema guide"
+  }
+}

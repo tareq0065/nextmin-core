@@ -1,0 +1,156 @@
+---
+title: Event System
+sidebarTitle: Event System
+description: Decouple your business logic from CRUD operations using our namespaced event system.
+---
+
+# Event System
+
+NextMin features a robust, `EventEmitter`-based event system that allows you to hook into the lifecycle of your data and system operations. This architectural pattern is essential for building scalable backends, as it allows you to decouple secondary logic (notifications, audit logging, external API sync) from your primary data flow.
+
+## Core Concepts
+
+The event system is centralized in the `events` singleton exported from `@airoom/nextmin-node`. We support two levels of events:
+
+1.  **Universal Events**: Global events triggered for all models (e.g., `Events.AFTER_CREATE`).
+2.  **Model-Specific Events**: Granular events triggered only for a specific model (e.g., `posts:after:create`).
+
+---
+
+## Universal Events
+
+Universal events are useful for cross-cutting concerns like global audit logs or cache invalidation. Use the `Events` constant for type-safe subscription.
+
+```ts
+import { events, Events } from '@airoom/nextmin-node';
+
+// Subscribe to any new document creation regardless of model
+events.on(Events.AFTER_CREATE, ({ modelName, result }) => {
+  console.log(`[Audit Log] New entry in ${modelName}:`, result.id);
+});
+```
+
+### Supported Universal Constants
+
+| Constant | Internal Name | Description |
+| :--- | :--- | :--- |
+| `BEFORE_CREATE` | `before:doc:create` | Before data is saved (payload: `{ modelName, data }`) |
+| `AFTER_CREATE` | `after:doc:create` | After document is persistent (payload: `{ modelName, data, result }`) |
+| `BEFORE_UPDATE` | `before:doc:update` | Before PATCH application (payload: `{ modelName, id, data }`) |
+| `AFTER_UPDATE` | `after:doc:update` | After update succeeds (payload: `{ modelName, id, data, result }`) |
+| `BEFORE_DELETE` | `before:doc:delete` | Before record removal (payload: `{ modelName, id }`) |
+| `AFTER_DELETE` | `after:doc:delete` | After successful deletion (payload: `{ modelName, id, result }`) |
+| `SCHEMA_UPDATE` | `schema:update` | Fired when schemas are hot-swapped |
+
+---
+
+## Model-Specific Events (Namespaced)
+
+Model-specific events allow you to target precise business logic. These follow the format `modelName:phase:action` and are always lowercased.
+
+### Practical Example: Sending Notifications
+
+Instead of bloating your `create` logic with email code, use an event listener:
+
+```ts
+import { events } from '@airoom/nextmin-node';
+
+// Only triggers when a document is created in the "Appointments" model
+events.on('appointments:after:create', async ({ result }) => {
+  await sendEmailToDoctor(result.doctorEmail, {
+    title: "New Appointment",
+    patient: result.patientName,
+    time: result.time
+  });
+});
+```
+
+### Event Naming Helper
+
+While you can use strings directly, we provide a helper to ensure consistency:
+
+```ts
+import { getModelEvent } from '@airoom/nextmin-node';
+
+const eventName = getModelEvent('Posts', 'create', 'after'); // "posts:after:create"
+events.on(eventName, (payload) => { /* ... */ });
+```
+
+---
+
+## Scaling Your Architecture
+
+The event-driven approach provides significant benefits as your application grows:
+
+### 1. Decoupling Logic
+Your core CRUD operations stay fast and clean. The "Service" that handles data storage doesn't need to know about "Notifications" or "ElasticSearch Sync".
+
+### 2. Async Flexibility
+Event listeners can be non-blocking. You can immediately return the API response to the user while background listeners process heavy tasks (like image optimization or webhooks) in the background.
+
+### 3. Maintainability
+Adding new functionality (like a slack alert for new signups) is as simple as adding a new `events.on` listener without modifying existing, tested code.
+
+### 4. Simplified Testing
+You can test your business logic listeners independently of your API routes by simply emitting mock events during your unit tests.
+
+---
+
+---
+## Full-Stack Event Propagation
+
+The NextMin architecture is designed to bridge backend events to your frontend automatically. When `RealtimeService` is active on the backend, it listens to the central `events` emitter and broadcasts changes to all connected clients.
+
+### Listening in Frontend (React)
+
+You don't need to import the backend event emitter. Instead, use the `useRealtime` hook from `@airoom/nextmin-react` to react to backend changes in real-time.
+
+```tsx
+import { useRealtime } from '@airoom/nextmin-react';
+
+function Dashboard() {
+  const { isConnected, lastEvent } = useRealtime();
+
+  useEffect(() => {
+    if (lastEvent?.event === 'posts:created') {
+      console.log('A new post was just created!', lastEvent.payload);
+      // Refresh your list or show a toast
+    }
+  }, [lastEvent]);
+
+  return <div>Status: {isConnected ? 'Live' : 'Offline'}</div>;
+}
+```
+
+### Supported Frontend Event Names
+
+The backend `Events.AFTER_CREATE` (and others) are mapped to standard socket events in the frontend:
+
+- `doc:created`, `doc:updated`, `doc:deleted` (Global)
+- `${model}:created`, `${model}:updated`, `${model}:deleted` (Model-specific, e.g., `doctors:created`)
+- `schemasUpdated` (When you hot-reload a schema on the backend)
+
+### Why use this for scaling?
+
+1.  **Zero-Latency UI**: Your users see updates from other users instantly without page refreshes.
+2.  **Shared Constants**: While the emitter is backend-only, the *event naming convention* is shared across your entire stack.
+3.  **Selective Listening**: You can listen to `doc:updated` if you need to refresh a global cache, or `appointments:created` if you just need to update the calendar view.
+
+---
+
+## Payload Structure
+
+Every CRUD event provides a consistent payload object to the listener:
+
+```ts
+{
+  modelName: "Doctors", // The PascalCase name of the schema
+  data?: { ... },       // The raw payload sent by the client (create/update)
+  id?: "...",           // The ID of the record (update/delete)
+  result?: { ... },     // The resulting document from the database (after phase)
+  query?: { ... }       // The filter criteria (read phase)
+}
+```
+
+> [!TIP]
+> Use `result` in "after" events to get the fully populated document, including auto-generated IDs and timestamps.

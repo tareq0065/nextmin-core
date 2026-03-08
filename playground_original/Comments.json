@@ -1,0 +1,50 @@
+{
+  "modelName": "Comments",
+  "group": "Contents",
+  "attributes": {
+    "comment": {
+      "type": "string",
+      "longtext": true,
+      "required": true
+    },
+    "author": {
+      "type": "ObjectId",
+      "ref": "Users",
+      "show": "firstName"
+    }
+  },
+  "allowedMethods": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  },
+  "access": {
+    "public": {
+      "read": true,
+      "create": true,
+      "update": false,
+      "delete": false
+    },
+    "authenticated": {
+      "read": true,
+      "create": true,
+      "update": false,
+      "delete": false
+    },
+    "roles": {
+      "admin": {
+        "read": true,
+        "create": true,
+        "update": true,
+        "delete": true
+      },
+      "superadmin": {
+        "read": true,
+        "create": true,
+        "update": true,
+        "delete": true
+      }
+    }
+  }
+}

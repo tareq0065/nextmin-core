@@ -1,0 +1,45 @@
+---
+title: Rich Text Editor
+sidebarTitle: Rich Text Editor
+---
+
+# Rich Text Editor
+
+Nextmin React includes a powerful, block-based rich text editor built on top of [Tiptap](https://tiptap.dev/). It supports standard text formatting, slash commands, image uploads, and advanced layout options.
+
+## Enabling the Editor
+
+To use the rich text editor for a field in your schema, simply set the `rich` property to `true` for a `string` type field:
+
+```json
+{
+  "body": {
+    "type": "string",
+    "rich": true,
+    "title": "Content Body"
+  }
+}
+```
+
+## Features
+
+### Slash Commands
+Type `/` in an empty paragraph to open the command menu. This allows you to quickly insert:
+- **Headings**: H1, H2, H3
+- **Lists**: Bullet and Numbered lists
+- **Media**: Images
+- **Layouts**: 2-Column and 3-Column blocks
+- **Embeds**: Embed other schema data (Tables, Lists, etc.)
+
+### Image Management
+The editor supports drag-and-drop image uploads and standard file selection.
+- **Resizing**: Click and drag the handles to resize images.
+- **Formatting**: Click an image to open the floating menu. You can set the alignment and `object-fit` styles (Cover, Contain, Fill).
+
+### Layouts & Grids
+Create complex page structures using the Layout commands.
+- **2 Columns**: Splits the content area into two equal columns.
+- **3 Columns**: Splits the content area into three equal columns.
+
+### Schema Embedding
+You can embed data from other collections directly into your content. This is useful for creating dynamic pages that reference other records.

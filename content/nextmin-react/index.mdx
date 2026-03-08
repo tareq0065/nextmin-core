@@ -1,0 +1,153 @@
+---
+title: nextmin-react
+sidebarTitle: nextmin-react
+---
+
+# nextmin-react
+
+React components, pages, and utilities for building an admin dashboard on top of a nextmin-node backend.
+
+## Features
+
+- Provider: `<NextMinProvider>` initializes the Redux store, loads schemas, and opens a live socket
+- Admin shell: `<AdminApp>` renders Auth, Sidebar, and all CRUD pages for your schemas
+- Internal router: `<NextMinRouter>` and `<AdminRouteNormalizer>` handle admin routes
+- Pages: Auth (sign in/up/forgot), Dashboard, List, Create/Edit, Profile, Settings
+- Components: Sidebar, SchemaForm, FileUploader, Ref selects, Phone/Password inputs, Table and filters
+- Hooks/Utils: Google address autocomplete, list data helpers, formatting helpers
+
+This page shows the exact setup used in the examples/react app.
+
+## Installation
+
+```bash
+# npm
+npm install @airoom/nextmin-react
+
+# yarn
+yarn add @airoom/nextmin-react
+
+# pnpm
+pnpm add @airoom/nextmin-react
+```
+
+## Configure environment
+
+The client reads these env vars:
+
+```env
+NEXT_PUBLIC_NEXTMIN_API_URL=http://localhost:8081/rest
+# IMPORTANT: Use the API key stored in your database → Settings table
+NEXT_PUBLIC_NEXTMIN_API_KEY=your_api_key_here
+```
+
+- NEXT_PUBLIC_NEXTMIN_API_URL should point to your nextmin-node REST base (e.g., http://host:port/rest)
+- NEXT_PUBLIC_NEXTMIN_API_KEY must equal the value in your DB Settings document’s `apiKey` field
+
+Where to find it:
+- Start your nextmin-node server once so initialization runs
+- Open your database and locate the Settings collection/table
+- Copy the first Settings document’s `apiKey` value and use it here
+
+## Default admin credentials (after setup)
+
+After you complete the basic setup and run the server, you can sign in to the Admin with the following default super user:
+
+- Email: super@example.com
+- Username: superadmin
+- Password: supersecurepassword
+
+For security, make sure to change this password after your first login (Profile → Change password) and, if needed, update the email/username in your Users collection.
+
+## App routing (as in examples/react)
+
+Create an admin section that’s fully client-side. The provider wraps only the admin area.
+
+```tsx
+// app/admin/layout.tsx
+'use client'
+
+import { NextMinProvider } from '@airoom/nextmin-react';
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return <NextMinProvider>{children}</NextMinProvider>;
+}
+```
+
+```tsx
+// app/admin/page.tsx
+'use client'
+
+import { AdminApp } from '@airoom/nextmin-react';
+
+export default function AdminIndex() {
+  return <AdminApp />;
+}
+```
+
+```tsx
+// app/admin/[...slug]/page.tsx
+'use client'
+
+import { AdminApp } from '@airoom/nextmin-react';
+
+export default function AdminCatchAll() {
+  return <AdminApp />;
+}
+```
+
+What this gives you:
+
+- AdminApp reads the session from localStorage and redirects:
+  - Unauthenticated users are sent to /admin/auth/sign-in
+  - Authenticated users visiting /admin/auth/* are redirected to /admin/dashboard
+- Inside the shell, Sidebar is shown and NextMinRouter renders pages based on your backend schemas
+- Schemas are fetched once via HTTP and then kept in sync over a live socket
+
+## Usage notes
+
+- You don’t need to import any CSS manually; the package includes its styles
+- Backend paths and auth are configured by env vars (see above)
+- To add custom pages inside the admin, link to routes like /admin/your-model/create or /admin/your-model/:id
+- The first Settings document (model name "Settings") is treated as system settings for logo, site name, and Google Maps key
+
+## Form Features (SchemaForm)
+
+The `SchemaForm` component drastically reduces boilerplate by rendering forms from JSON schemas.
+
+- **Auto Slug Generation**: Use `populateSlugFrom: "title"` in your schema to automatically generate URL-friendly slugs. It handles uniqueness (appending `-1`, `-2`) and supports multi-field sources (`populateSlugFrom: "firstName,lastName"`).
+- **Reference Selects**:
+  - `RefSingleSelect`: Searchable dropdown with alphabetical sorting.
+  - `RefMultiSelect`: Tag-based multi-select with search and sorting.
+- **Improved JSON Groups**: Support for recursive `json-group` nesting, allowing complex data structures to be managed with full field support (references, dates, etc.) at any depth.
+- **Enhanced Validation**: Automatic propagation of `minLength`, `maxLength`, and `pattern` (regex) constraints from schema to UI fields.
+- **Rich Text**: Fields with `rich: true` render a Tiptap-based editor with slash commands and sanitized output.
+
+## Viewer (Drawer)
+
+We ship a schema-driven, reusable viewer that opens in a right-side Drawer from list rows. It:
+
+- Adds a View (eye) icon next to Edit/Delete in tables
+- Hides system/private fields and masks any password/secret-like fields
+- Merges `baseId` object data into the child for viewing when schemas extend others
+- Summarizes raw JSON values (including JSON strings) into readable lines
+
+See details and API: [Viewer (Drawer)](/docs/nextmin-react/viewer)
+
+## Advanced Configuration
+
+- **Data Table Custom Actions**: Inject custom action buttons horizontally into any row by wrapping the standard table component. This allows firing distinct side-effects, navigations, or modal dialogs specific to a single document instance.
+- **Conditional Role-Based Password Fields**: During standard account creation flows (e.g. creating different types of Users with diverse schema types), the password inputs intelligently hide or require themselves based entirely on the specific access roles targeted, reducing admin friction.
+
+## TypeScript
+
+Types are bundled with the package.
+
+```text
+import type { ApiItemResponse } from '@airoom/nextmin-react/types';
+```
+
+## See also
+
+- Server package: [nextmin-node](/docs/nextmin-node)
+- Back to Introduction: [/docs](/docs)
