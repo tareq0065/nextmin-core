@@ -143,31 +143,36 @@ curl -X POST http://localhost:8081/rest/posts \
 ### List (GET /:model)
 
 Query parameters supported by the list endpoint:
-- page: number (default 0)
-- limit: number (default 10)
+- `page`: number (default 1 - **Note: Transitioned to 1-based pagination**)
+- `limit`: number (default 12)
+- `select` or `fields`: CSV of field names to return (Projection)
 - Search helpers:
-  - q: the search term/value
-  - searchKey: field name to search in (single)
-  - searchKeys: CSV of fields to search in (multi)
-  - searchMode: and|or (defaults to or)
+  - `q`: the search term/value
+  - `searchKey`: field name to search in (single)
+  - `searchKeys`: CSV of fields to search in (multi)
+  - `searchMode`: and|or (defaults to or)
+  - `searchType`: starts|includes (defaults to starts)
 - Date range:
-  - dateFrom: ISO or parseable date
-  - dateTo: ISO or parseable date
-  - dateKey: which date field to use (defaults to createdAt, then updatedAt)
-- Sorting (multi-field):
-  - sort: CSV of field names, e.g. name,createdAt
-  - sortType: CSV of directions (asc|desc), matched by position
+  - `dateFrom`: ISO or parseable date
+  - `dateTo`: ISO or parseable date
+  - `dateKey`: which date field to use
+- Sorting:
+  - `sort`: CSV of field names (e.g. `createdAt,name`). Supports prefixes: `+` for ASC, `-` for DESC (e.g. `-createdAt`).
+  - `sortType`: CSV of directions (asc|desc), matched by position if no prefix is used in `sort`.
 - Advanced Filtering (`where`):
   - Pass a JSON object to the `where` parameter for complex queries.
   - `$nestedSearch`: Search across referenced collections. e.g. `where={"speciality":{"$nestedSearch":"Cardio"}}`
-- Search Operators:
-  - `^`: Prefix search. e.g. `q=^Alice`
-  - `$`: Postfix search. e.g. `q=Smith$`
+- Field-specific Operators:
+  - `!`: Not equal. e.g. `status=!active`
+  - `gt:`, `gte:`, `lt:`, `lte:`: Numeric/Date comparisons. e.g. `price=gt:100`
+  - `,`: CSV for `$in` queries. e.g. `category=news,updates`
+  - `^`: Prefix regex search. e.g. `name=^Alice`
+  - `$`: Postfix regex search. e.g. `name=Smith$`
 
 Example:
 
 ```bash
-curl "http://localhost:8081/rest/posts?limit=20&page=0&sort=createdAt&sortType=desc&q=hello&searchKeys=title,content" \
+curl "http://localhost:8081/rest/posts?limit=20&page=1&sort=-createdAt&select=title,createdAt&q=hello&searchKeys=title,content" \
   -H "x-api-key: $API_KEY" \
   -H "Authorization: Bearer $JWT"
 ```
@@ -178,8 +183,8 @@ Response:
 {
   "success": true,
   "message": "Data fetched for Posts",
-  "data": [ { "id": "...", "title": "Hello" } ],
-  "pagination": { "totalRows": 1, "page": 0, "limit": 20 },
+  "data": [ { "id": "...", "title": "Hello", "createdAt": "..." } ],
+  "pagination": { "totalRows": 1, "page": 1, "limit": 20 },
   "sort": { "createdAt": -1 }
 }
 ```
@@ -408,7 +413,13 @@ async function login(email: string, password: string) {
 }
 
 async function listPosts(jwt: string) {
-  const res = await fetch(`${BASE}/posts?limit=20&page=0&sort=createdAt&sortType=desc`, {
+  const url = new URL(`${BASE}/posts`);
+  url.searchParams.set('limit', '20');
+  url.searchParams.set('page', '1');
+  url.searchParams.set('sort', '-createdAt');
+  url.searchParams.set('select', 'title,createdAt');
+
+  const res = await fetch(url.toString(), {
     headers: { 'x-api-key': API_KEY, Authorization: `Bearer ${jwt}` },
   });
   const json = await res.json();

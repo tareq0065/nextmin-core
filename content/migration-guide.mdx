@@ -1,0 +1,122 @@
+# Migration Guide: New Architecture
+
+Welcome to the NextMin New Architecture! This guide will help you migrate your existing NextMin project to the latest event-driven and natively realtime system.
+
+## Why Migrate?
+
+The new architecture provides several key benefits:
+- **Native Realtime**: No separate WebSocket server needed; it's integrated into the Express router.
+- **Event System**: Hook into lifecycle events (`before:create`, `after:update`) for custom logic.
+- **Performance**: Optimized data fetching and schema handling.
+- **Improved DX**: Simplified configuration and better TypeScript support.
+
+---
+
+## Node.js Backend Migration
+
+### 1. Update Router Configuration
+The `createNextMinRouter` now accepts an optional `server` argument to enable native realtime support.
+
+**Before:**
+```ts
+const router = createNextMinRouter({ dbAdapter: db });
+app.use('/rest', router);
+```
+
+**After:**
+```ts
+const server = http.createServer(app);
+const router = createNextMinRouter({ 
+  dbAdapter: db, 
+  server: server // Enable native realtime
+});
+app.use('/rest', router);
+```
+
+### 2. Switch to `NMAdapter`
+The legacy `MongoAdapter` and `InMemoryAdapter` are deprecated. Use the unified `NMAdapter` which supports SQL and MongoDB.
+
+**Before:**
+```ts
+const db = new MongoAdapter({ url: '...' });
+```
+
+**After:**
+```ts
+const db = new NMAdapter({ 
+  type: 'mongodb', // or 'postgres', 'sqlite', etc.
+  url: '...' 
+});
+```
+
+### 3. Implement Lifecycle Hooks
+Replace manual hooks or middleware with the new `events` system.
+
+```ts
+import { events, Events } from '@airoom/nextmin-node';
+
+events.on(Events.AFTER_CREATE, ({ modelName, data }) => {
+  console.log(`New ${modelName} created:`, data.id);
+});
+```
+
+---
+
+## React Frontend Migration
+
+### 1. Update `NextMinProvider`
+The provider now handles realtime bootstrapping automatically. Ensure you pass the `apiUrl` and `apiKey` directly.
+
+**Before:**
+```tsx
+<NextMinProvider>
+  <AdminApp />
+</NextMinProvider>
+```
+
+**After:**
+```tsx
+<NextMinProvider 
+  apiUrl={process.env.NEXT_PUBLIC_NEXTMIN_API_URL} 
+  apiKey={process.env.NEXT_PUBLIC_NEXTMIN_API_KEY}
+>
+  <AdminApp />
+</NextMinProvider>
+```
+
+### 2. Consuming Realtime Events
+If you need to react to live updates in your custom components, use the `useRealtime` hook.
+
+```tsx
+import { useRealtime } from '@airoom/nextmin-react';
+
+function MyStatusComponent() {
+  const { isConnected, lastEvent } = useRealtime();
+  return <div>Status: {isConnected ? 'Live' : 'Offline'}</div>;
+}
+```
+
+### 3. Rich Text Support
+To enable the new Tiptap editor for a field, update your schema JSON:
+
+```json
+{
+  "name": "content",
+  "type": "string",
+  "rich": true
+}
+```
+
+---
+
+## Breaking Changes Summary
+
+| Feature | Old Pattern | New Pattern |
+| :--- | :--- | :--- |
+| Realtime | Manual setup | `createNextMinRouter({ server })` |
+| Adapters | `MongoAdapter` | `NMAdapter` |
+| Hooks | Custom / Middleware | `events` emitter |
+| Provider | Default context | Explicit `apiUrl`/`apiKey` |
+| Rich Text | Standard Textarea | `"rich": true` schema option |
+
+Need help? Reach out on [GitHub](https://github.com/tareq0065/nextmin-core) or our community channels!

@@ -233,7 +233,7 @@ export default function Home() {
                 ))}
               </div>
               <div className="text-sm font-bold text-neutral-400 italic">
-                Trusted by builders with <span className="text-neutral-900 not-italic">{npmDownloads ? `${npmDownloads * 5}+` : '490+'}</span> downloads.
+                Trusted by builders with <span className="text-neutral-900 not-italic">{npmDownloads ? `${npmDownloads * 10}+` : '490+'}</span> downloads.
               </div>
             </motion.div>
           </div>

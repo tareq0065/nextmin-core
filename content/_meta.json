@@ -1,6 +1,17 @@
 {
-  "index": { "title": "Introduction" },
-  "nextmin-node": { "title": "nextmin-node" },
-  "nextmin-react": { "title": "nextmin-react" },
-  "release-notes": { "title": "Changelogs" }
+  "index": {
+    "title": "Introduction"
+  },
+  "nextmin-node": {
+    "title": "nextmin-node"
+  },
+  "nextmin-react": {
+    "title": "nextmin-react"
+  },
+  "migration-guide": {
+    "title": "Migration Guide"
+  },
+  "release-notes": {
+    "title": "Changelogs"
+  }
 }
