@@ -170,6 +170,61 @@ Below are the unique parameters you can use inside attributes, grouped by purpos
   }
   ```
 
+## Advanced Relationship Features
+
+NextMin provides intelligent features to eliminate API waterfalls and improve SSR performance by embedding related data directly into your documents.
+
+### Virtual Fields (Inverse Counts)
+
+Virtual fields allow you to automatically fetch the count of documents that reference the current document. These are computed at runtime and are not stored in the database.
+
+```json
+{
+  "attributes": {
+    "doctorCount": {
+      "type": "virtual",
+      "op": "count",
+      "ref": "Doctors",
+      "foreignField": "hospitalId",
+      "localField": "id"
+    }
+  }
+}
+```
+
+### Aggregated Summaries
+
+Unlike virtual fields, Aggregated Summaries are physically stored and automatically updated whenever a related document is created, updated, or deleted. This provides the highest performance for large datasets.
+
+```json
+{
+  "modelName": "Hospitals",
+  "attributes": {
+    "ratingCount": { "type": "number", "default": 0 },
+    "ratingAverage": { "type": "number", "default": 0 },
+    "doctorCount": { "type": "number", "default": 0 }
+  },
+  "aggregates": [
+    {
+      "op": "count",
+      "ref": "Doctors",
+      "foreignField": "hospitalId",
+      "localField": "id",
+      "as": "doctorCount"
+    },
+    {
+      "op": "avg",
+      "ref": "Ratings",
+      "foreignField": "subjectId",
+      "localField": "id",
+      "as": "ratingAverage",
+      "countField": "ratingCount", // Optional: also updates the count
+      "valueField": "rating"       // The field to average
+    }
+  ]
+}
+```
+
 ## Access and methods
 
 - allowedMethods: enable or disable CRUD endpoints per model:

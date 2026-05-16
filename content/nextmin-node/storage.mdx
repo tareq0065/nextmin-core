@@ -53,3 +53,52 @@ const fileStorageAdapter = new S3FileStorageAdapter({
   forcePathStyle: true,
 });
 ```
+
+## Image Proxying & Transformation (New)
+
+Nextmin can automatically transform storage URLs (like S3/R2 links) into proxied URLs served through your own domain. This is essential for SEO and brand consistency.
+
+### How it works
+
+1.  **Transformation**: When the API returns a document, it scans all fields for URLs matching your storage base and replaces them with your proxy base (e.g., `/images`).
+2.  **Proxying**: The backend provides a new endpoint `GET /rest/files/:key(*)` that streams the actual file from storage to the browser.
+
+### Automatic Configuration
+
+If you have `FRONTEND_URL` set in your environment variables, Nextmin will automatically enable a relative proxy at `/images`.
+
+### Manual Configuration
+
+You can also configure this explicitly in your `NMAdapter` options:
+
+```ts
+const dbAdapter = new NMAdapter({
+  // ... other options
+  imageProxy: {
+    // The original S3/R2 base URL to look for
+    originalBase: 'https://mybucket.s3.us-east-2.amazonaws.com',
+    // The new base path to use in API responses
+    proxyBase: '/images'
+  }
+});
+```
+
+### Next.js Integration
+
+To make this work seamlessly with Next.js, add a rewrite to your `next.config.js`:
+
+```js
+// next.config.js
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/images/:path*',
+        destination: 'https://api.yourdomain.com/rest/files/:path*',
+      },
+    ]
+  },
+}
+```
+
+This ensures that images like `/images/uploads/photo.jpg` are transparently proxied through your backend while appearing to come from your main domain.

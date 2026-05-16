@@ -14,6 +14,49 @@ Assumptions:
 - All requests must include the x-api-key header (value from your DB → Settings.apiKey)
 - Authenticated routes also require Authorization: Bearer YOUR_JWT
 
+## Dynamic Aggregate Counters (New)
+
+You can request counts of related items directly in your `select` query using the `Model[count]` syntax. The backend will automatically identify the relationship and return a flattened count field.
+
+### Example: Doctors per Specialty
+
+If you want to list specialties and include the total number of doctors for each:
+
+```bash
+curl "http://localhost:8081/rest/specialities?select=name,slug,image,doctor[count]" \
+  -H "x-api-key: $API_KEY"
+```
+
+**Response:**
+
+The backend will inject a camelCased count field (e.g., `doctorCount`):
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "name": "Cardiology",
+      "slug": "cardiology",
+      "doctorCount": 42
+    },
+    {
+      "name": "Neurology",
+      "slug": "neurology",
+      "doctorCount": 15
+    }
+  ]
+}
+```
+
+### Key Features:
+- **Zero Configuration**: No need to define virtual fields in your schema.
+- **Batch Optimized**: All counts are fetched in a single optimized query per request.
+- **Cross-Database Support**: Works across all supported databases (MongoDB, PostgreSQL, MySQL, SQLite).
+- **Generic**: Works for any relationship. For example, `specialities[count]` on a District will return `specialitiesCount`.
+
+---
+
 ## Headers
 
 - x-api-key: your_api_key_here
@@ -120,6 +163,104 @@ curl -X POST http://localhost:8081/rest/auth/users/forgot-password \
 ```
 
 Returns a generic success message without revealing user existence.
+
+## Performance & SSR Optimizations
+
+These features are designed to eliminate **API Waterfalls** and achieve "Perfect SSR" where the server fetches all required data in a single round-trip.
+
+### Multi-Model Batching (`POST /_batch`)
+
+Atomically fetch data from multiple collections in one request.
+
+```bash
+curl -X POST http://localhost:8081/rest/_batch \
+  -H "x-api-key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "hospitals": {
+      "path": "/hospitals",
+      "query": { "limit": 10, "select": "name,slug,doctorCount" }
+    },
+    "districts": {
+      "path": "/districts",
+      "query": { "limit": 500, "select": "name,slug" }
+    }
+  }'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "results": {
+    "hospitals": { "data": [...], "pagination": {...} },
+    "districts": { "data": [...], "pagination": {...} }
+  }
+}
+```
+
+### Batched Grouped Counts (`countBy`)
+
+Retrieve counts grouped by a specific field. Useful for category counts or seeing how many "child" items exist for a list of "parent" IDs.
+
+```bash
+curl "http://localhost:8081/rest/doctors?countBy=hospitalId&hospitalId[$in]=ID1,ID2" \
+  -H "x-api-key: $API_KEY"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "counts": {
+    "ID1": 15,
+    "ID2": 8
+  }
+}
+```
+
+### Dynamic Aggregate Counters (`model[count]`)
+
+Request counts of related documents dynamically via the `select` parameter. No schema changes required.
+
+```bash
+# Example: Fetching specialities and counting how many doctors belong to each
+curl "http://localhost:8081/rest/specialities?select=name,doctor[count]" \
+  -H "x-api-key: $API_KEY"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    { "id": "1", "name": "Cardiology", "doctorCount": 15 },
+    { "id": "2", "name": "Neurology", "doctorCount": 8 }
+  ]
+}
+```
+
+- **Syntax**: Use `relatedModel[count]` in the `select` CSV.
+- **Output**: Returns a flattened field named `relatedModelCount`.
+- **Logic**: Automatically discovers the relationship field in the target model.
+
+### Server-Side Random Sampling (`sample`)
+
+Get a random subset of documents natively from the database.
+
+```bash
+curl "http://localhost:8081/rest/doctors?sample=5&speciality=Cardiology" \
+  -H "x-api-key: $API_KEY"
+```
+
+### Selective Deep-Population
+
+Reduce payload size by selecting only required fields on populated relations using the `relation:field1,field2` syntax.
+
+```bash
+curl "http://localhost:8081/rest/doctors?populate=hospitalId:name,logo" \
+  -H "x-api-key: $API_KEY"
+```
 
 ## Generic CRUD per model
 

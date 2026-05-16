@@ -5,6 +5,33 @@ sidebarTitle: Changelogs
 
 # Release notes
 
+## 2026-05-11
+- **Dynamic Aggregate Counters via Selection**:
+  - **`model[count]` Syntax**: Introduced a powerful, zero-config way to request related-item counts directly in the `select` parameter (e.g., `select: "name,doctor[count]"`).
+  - **Auto-Discovery**: The backend now automatically identifies inverse relationships and calculates counts in a single optimized batch, returning them as flattened fields (e.g., `doctorCount`).
+  - **Accurate Array Counting**: Enhanced the MongoDB adapter with `$unwind` aggregation logic to ensure 100% accurate counts when relationships are stored as arrays.
+- **Timestamp Lifecycle Fixes**:
+  - **Forced `updatedAt` Refresh**: Resolved a critical issue where `updatedAt` timestamps remained stale during partial updates in `NMAdapter`. Every modification now correctly triggers a timestamp refresh.
+  - **`oldDoc` Event Context**: Updated the `BaseModel` update lifecycle to include the original document state (`oldDoc`) in `BEFORE_UPDATE` and `AFTER_UPDATE` events, enabling complex delta-based business logic.
+- **Image URL Proxying & Transformation**:
+  - **On-the-fly URL Transformation**: The backend can now automatically rewrite storage URLs (S3/R2) to a local proxy path (e.g., `/images`) in all API responses.
+  - **Backend File Proxy**: Introduced a new `GET /rest/files/:key(*)` endpoint that streams files directly from storage, allowing you to serve assets through your primary domain for better SEO.
+  - **Zero-Config Env Support**: Automatically detects S3 base URLs and configures the proxy using the `FRONTEND_URL` environment variable.
+
+## 2026-04-11
+- **"Perfect SSR" Backend Optimizations**:
+  - **Atomic Multi-Model Batching**: Introduced `POST /_batch` to fetch multiple collections (hospitals, districts, etc.) in a single network request, eliminating API waterfalls on the server.
+  - **Batched Grouped Counts (`countBy`)**: Added `?countBy=field` parameter to list endpoints. Ideal for fetching counts for multiple entities (e.g., "Number of Doctors per Hospital") in one call.
+  - **Selective Deep-Population**: Enhanced relationship hydration to support sub-field projection (e.g., `populate=hospital:name,logo`), significantly reducing JSON payload sizes for SSR.
+  - **Server-Side Random Sampling**: Added native `?sample=N` support for all databases (using `$sample` for Mongo and `RANDOM()`/`RAND()` for SQL), perfect for "Random Featured Doctors" sections.
+- **Advanced Schema Intelligence**:
+  - **Virtual Count Fields**: Added `type: "virtual"` support to schemas, allowing automated inverse-relationship counts (e.g., `doctorCount` on a Hospital) without manual query logic.
+  - **Real-Time Aggregated Summaries**: Introduced the `aggregates` schema property. The backend now automatically maintains denoised counters (e.g., `totalReviews`) on parent documents by listening to child lifecycle events.
+- **Architecture & DX**:
+  - **Universal ID Coercion**: Improved `NMAdapter` to automatically handle type-safe ID matching across string/numeric boundaries in SQL dialects.
+  - **TypeScript Definitions**: Expanded `ParsedQuery` and `ReadOptions` interfaces to support new optimization parameters.
+
+
 ## 2026-02-23
 - **Performance & Caching Architecture**:
   - **QueryCache System**: Introduced a unified caching layer via `keyv` (with out-of-the-box Redis support) to cache `NMAdapter.read` and `count` operations, dropping recurring API latencies from &gt;1s down to &lt;100ms.

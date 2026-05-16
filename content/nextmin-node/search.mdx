@@ -144,6 +144,7 @@ console.log(json);
   - If a model extends a base, base fields are hydrated; baseId is removed in the response.
 - Projection (select)
   - When select is provided for a model, only those fields (and id) are returned, subject to read masks.
+  - You can perform **Selective Deep-Population** by specifying fields for related documents using the `relationName:field1,field2` syntax in the projection list.
 
 ## Advanced Search Features
 
