@@ -1,9 +1,112 @@
 ---
-title: Changelogs
+title: Changelogs & Release Notes — NextMin Updates
 sidebarTitle: Changelogs
+description: Complete release notes and changelog for NextMin packages (@airoom/nextmin-node and @airoom/nextmin-react). Track new features, breaking changes, and bug fixes.
 ---
 
 # Release notes
+
+## 2.0.3 (2026-10-04)
+- **Phone OTP Direct Login & Password Reset Flow (`@airoom/nextmin-node`)**:
+  - **Direct Login via Phone OTP (`POST /auth/login-otp`)**: Added passwordless login using phone number and one-time password (OTP). Authenticates against `otpStore`, normalizes the user role, issues a 7-day JWT, and emits `auth:login`.
+  - **Complete OTP-Based Password Reset**:
+    - `POST /auth/forgot-password`: Generates a secure 6-digit OTP, stores it in `otpStore` under `reset:${phone}`, and emits an `auth:otp:send` event with `{ phone, otp, type: 'forgot_password' }`.
+    - `POST /auth/reset-password`: Validates the OTP against `otpStore`, validates minimum password length (8+ chars), hashes the new password with bcrypt + `jwtSecret`, and updates the user record.
+- **Extended User Schema Hygiene (`@airoom/nextmin-node`)**:
+  - **`stripInheritedIfNoBase` Response Sanitization**: Automatically strips inherited base User fields (`username`, `password`, `email`, etc.) from API responses (`GET /:model/:id`, `GET /:model`, `POST /:model`, `PUT /:model/:id`) when no base account is linked (`baseId` is null).
+  - **Intelligent Base User Creation**: Skips creating empty base user accounts during child record creation unless meaningful user fields are explicitly provided.
+- **Storage & Image Enhancements (`@airoom/nextmin-node`)**:
+  - **Resized Image Disk Cache**: Added persistent on-disk image transform caching (`.nextmin/cache/resized/...`) with MD5 hashing of keys and dimensions.
+  - **Graceful Image Fallback**: Missing image requests on `/files/:key(*)` return a clean SVG placeholder (`FALLBACK_SVG`) with HTTP 200 instead of 404 broken image links.
+  - **UTF-8 Filename Decoding**: Added `fixUtf8Filename` to repair Multer's default Latin1/ISO-8859-1 decoding for international and non-ASCII file names.
+  - **S3/R2 Metadata Sanitization**: Sanitizes custom metadata by stripping non-ASCII characters to prevent S3 HTTP header validation errors.
+  - **Unicode Slugification & Duplicate Protection**: Enhanced `slugify` to support Unicode characters (`\p{L}\p{N}\p{M}`) and returns **HTTP 409 Conflict** (`FILE_EXISTS`) if a file with the same name already exists in storage.
+- **Direct Database Schema Indexing for AI RAG (`@airoom/nextmin-node`)**:
+  - **Schema DB Indexing**: Added `indexDatabaseSchemas()` to `IndexingService` allowing direct extraction and vector indexing of database collections (`whitelabelSchemas`) without requiring page scraping.
+  - **Configurable OpenAI Model**: Supported `OPENAI_MODEL` environment variable (defaults to `gpt-5.6-luna`).
+- **Dynamic Theming System (`@airoom/nextmin-react`)**:
+  - **Configurable Theme Engine**: Centralized dashboard styling via `nextmin-theme.ts` / `nextmin-theme.js` or the `<NextMinProvider theme={...}>` prop.
+  - **Automated Color Conversion**: Automatically transforms hex color codes (`primaryColor`) into HSL CSS variables (`--heroui-primary`, etc.) for seamless HeroUI integration.
+  - **Custom Dimensions & Positions**: Controls for `sidebarWidth`, `sidebarPosition` (`left` or `right`), `inputHeight`, `inputRadius`, `topNavHeight`, and full color palettes.
+- **Data Table Multi-Select & Bulk Actions (`@airoom/nextmin-react`)**:
+  - **Row Checkboxes & Sticky Toolbar**: Support for selecting multiple records with a floating counter toolbar.
+  - **Bulk Deletion**: Confirmation dialog (`ConfirmDialog`) for deleting multiple records simultaneously.
+  - **Click Propagation Isolation**: Cell clicks and copy buttons are isolated (`stopRowSelectionProps`) to prevent unwanted row toggling.
+  - **Protected System Rows**: Protected rows (`isSystemRowItem`) disable delete and edit actions.
+- **Schema Custom Actions & QR Code Generator (`@airoom/nextmin-react`)**:
+  - **Custom Row Actions**: Support for `customActions` array in model schemas.
+  - **Built-in QR Code Generator**: Modal supporting dynamic URL templates (`{slug}`, `{id}`), live SVG rendering, copy-to-clipboard, SVG download, and high-resolution PNG (1024px) download.
+- **Rich Text Editor Upgrades (`@airoom/nextmin-react`)**:
+  - **Custom Font Size Modal**: Dropdown with preset font sizes (`12px` - `36px`) and an interactive modal supporting custom sizes with unit validation (`px`, `rem`, `em`, `pt`, `%`).
+  - **Clean Heading Enter (`ClearMarksOnHeaderEnter`)**: Pressing Enter at the end of a heading resets formatting to a clean paragraph.
+  - **Pasted HTML Sanitizer (`transformPastedHTML`)**: Automatically strips Microsoft Word and Outlook metadata and comment artifacts.
+- **Dynamic View Drawer (`@airoom/nextmin-react`)**:
+  - **Full Record Hydration**: Automatically fetches complete document records via `api.get(model, id)` with a loading spinner to display fields omitted from table views.
+  - **Enhanced Image Detection**: Auto-detects image fields by schema attribute types, formats, or common naming conventions (`avatar`, `photo`, `logo`, `cover`, `thumbnail`).
+
+## 2026-08-04
+- **Dynamic References (`refPath`) & Attribute Immutability (`readOnly`)**:
+  - **Dynamic Reference Resolution (`refPath`)**: Added support for dynamic model references based on string enum fields in the same schema (e.g. `subjectId` referencing `Doctors` or `Hospitals` based on `subjectType`).
+  - **Schema Startup Validation & Developer Warnings**: Automated validation of `refPath` configurations on server boot (`registerSchemas`), logging clear terminal warnings if target fields are missing, non-enum, or contain unregistered model names.
+  - **Attribute Immutability (`readOnly`)**: Enforced read-only attribute protection at the API router level (`PUT /:model/:id`) and disabled inputs in `@airoom/nextmin-react` Admin UI forms.
+  - **Robust Edge-Case & Runtime Safety**: Ensured strict enum string validation, graceful fallbacks for unpopulated IDs or partial projections (`select`), and prevention of uncaught runtime exceptions.
+
+## 2026-08-01
+- **Dynamic Image Resizing & WebP Default**:
+  - **Dynamic Image Proxying**: Added support for width (`w`), height (`h`), quality (`q`), and format (`fmt`) query parameters to the `/files/:key(*)` endpoint (powered by `sharp`).
+  - **Default WebP Format**: All proxied images now default to being converted and served as optimized `image/webp` for maximum speed and minimal bandwidth.
+  - **Clean Original Filenames**: Preserved original slugified filenames during uploads without appending random hash strings.
+  - **Duplicate File Prevention**: Added storage existence checks before uploading files, returning **HTTP 409 Conflict** (`FILE_EXISTS`) if a file with the same name already exists in storage.
+- **High-Performance Query Cache & Relational Auto-Indexing**:
+  - **Keyv In-Memory/Redis Caching**: Integrated query caching into `NMAdapter.read()` and `NMAdapter.count()`.
+  - **Collection Version Invalidation**: Automatic O(1) version bumping on collection mutations (`create`, `update`, `delete`) to keep cached results 100% fresh.
+  - **Automatic Indexing**: Automatically indexes `ref` relation fields and frequently filtered/sorted columns (`name`, `title`, `slug`, `createdAt`) upon schema registration.
+- **Client Projection & RefSelect Performance Optimization (`@nextmin/react`)**:
+  - **Select Parameter Projection**: Added `.select()` method to `QueryBuilder` and `select` option to `api.list()` to fetch only essential columns from the database.
+  - **RefSelect Optimization**: Updated `<RefSelect>` to send `select: 'id,_id,name,title'`, hydrate missing pre-selected labels eagerly via `$in` query, and deduplicate concurrent client requests.
+  - **React Spectrum Event Fix**: Fixed `stopPropagation` warnings on listbox search input components inside HeroUI Select dropdowns.
+
+## 2026-06-25
+- **Sequential Role-Based User Management & Permissions**:
+  - **Context-Aware Owner Policy**: Enhanced `authorize.ts` to dynamically evaluate `"owner"` depending on schema context. Standard users own their own accounts (`doc.id === ctx.userId`), while administrators own their accounts *plus* any users they created (`doc.createdBy === ctx.userId`).
+  - **Dynamic Owner Query Filters**: Configured `ownerFilter` to return `{ or: [{ id: ctx.userId }, { createdBy: ctx.userId }] }` for admins listing users, enabling them to see and manage only their own accounts and users they created.
+  - **Asynchronous Restriction Validation**: Migrated `enforceRestrictions` to be asynchronous, utilizing `routerCtx.normalizeRoleName` to resolve database role ObjectIds to literal string roles before validating forbidden values.
+  - **Deep Schema Access Merging**: Refactored the `SchemaLoader` schema merging logic to perform deep merges on the `access` block (including `public`, `authenticated`, `roles`, `queryFilter`, `createDefaults`, `restrictions`, and `bypassPrivacy`). This guarantees local custom schemas do not accidentally overwrite default security policies.
+  - **Admin Creation Escalation Guard**: Restructured the user signup and CRUD creation flows to prevent standard admins or public registrants from assigning administrative roles (`admin` or `superadmin`) to new users.
+  - **Schema-Driven Current User Visibility**: Removed hardcoded in-memory user filtering from list endpoints, allowing the schema's `queryFilter` configuration to dictate when the current user is hidden. As a result, superadmins can now see themselves in the admin panel user table.
+  - **React 19 key Prop Warning Fixes**: Corrected key spreads inside `DataTableHero` pagination item render loops to prevent deprecation warnings in React 19.
+
+## 2026-06-24
+- **OTP Verification & Phone Authentication**:
+  - **Phone OTP Verification**: Added new `POST /auth/users/send-otp` endpoint, generating 6-digit numeric OTPs stored in a TTL-based key-value store (5-minute expiration) and emitting `auth:otp:send` events for SMS gateway triggers.
+  - **Verification Gate (`phoneVerification`)**: Added support for the `phoneVerification` boolean schema flag. When enabled on the `Users` schema or dynamically overridden at the role level, registration requires a valid OTP mapping to the supplied phone number.
+  - **OTP Bypass**: Requests containing the trusted API key or initiated by authenticated administrators automatically bypass OTP verification for server-to-server signups.
+  - **Phone Logins (`authServices`)**: Added support for logging in via phone numbers. The `POST /auth/users/login` endpoint automatically parses and routes logins using `email`, `username`, or `phone` depending on configured `authServices` in the schema.
+  - **Phone-Based Reset**: Enhanced the `forgot-password` handler to lookup accounts and deliver instructions via email or phone.
+- **AI Chatbot & Local Offline LLM Integration (`@nextmin/chat`)**:
+  - **Zero-Dependency React Chat Widget**: Launched `@nextmin/chat`, a beautiful floating chat interface for React/Next.js featuring multi-session threads in `localStorage`, cross-tab synchronization, absolute URL resolution, and rich markdown parsing with copy-code buttons.
+  - **In-Process Local LLM (node-llama-cpp)**: Added support for in-process GGUF LLM execution using `node-llama-cpp` to host local Gemma/Llama models offline, eliminating API dependencies.
+  - **Offline RAG & Local Search**: Implemented a local TF-IDF document crawler and search engine on scraped static pages with smart paragraph-based chunking and path boosting.
+  - **Context-Aware Sequence Caching**: Caches active `LlamaChatSession` sequences to avoid reloading multi-gigabyte models into RAM on subsequent prompts.
+  - **OpenAI Responses & File Search Sync**: Integrated `OpenAIService` to synchronize scraped local content to OpenAI Vector Stores, using Responses API streams with automatic thread session restoration and rate-limiting retry buffers.
+  - **Incremental Scraping & CLI**: Added `npx nextmin-node reindex` command-line crawler with MD5 hash manifest checks to perform fast incremental site indexing and prune deleted pages automatically.
+- **Rich Text Editor Enhancements**:
+  - **Bangla & Standard Fonts Selector**: Added a font-family dropdown directly in the Tiptap editor toolbar, supporting Bengali fonts (Hind Siliguri, Kalpurush, SolaimanLipi, etc.) and standard sans/serif/monospace choices.
+  - **Expanded Heading Styles**: Exposed controls for H3, H4, H5, and H6 heading elements inside the toolbar for advanced document structuring.
+- **SSR Optimization & Batch API**:
+  - **Atomic Multi-Query Batching (`POST /_batch`)**: Added a batched query endpoint to combine multiple separate resource requests (e.g. lists, pagination, sample counts) into a single server round-trip, optimizing server-side rendering performance.
+
+## 2026-06-23
+- **Production-Grade Multi-Role Auth Update**:
+  - **Registration Whitelisting**: Added `publicRegisterFields` option to the Users schema, restricting registration inputs to prevent privilege escalation (e.g. users attempting to submit admin status directly).
+  - **Role-Name to Database ID Resolution**: The signup routes now support string-based role names (e.g., `role: "agent"`) in the request payload and resolve them automatically to relational IDs.
+  - **Admin-Only Role Assignment Protection**: Enforced role restriction rules to reject administrative role assignments (e.g. `admin`/`superadmin`) on public signup endpoints unless requested by an authenticated administrator.
+  - **Role-Conditional Onboarding Statuses**: Added `roleDefaultStatuses` schema configuration, mapping individual user roles to conditional default statuses (e.g., buyers register as `active` immediately, developers/agents default to `pending` awaiting verification).
+  - **Auth Lifecycle Events**: Registration and login endpoints now emit `auth:signup` and `auth:login` events on the central event emitter.
+- **AI Chat Integrations & Chatbot Improvements (`@nextmin/chat`)**:
+  - **Dynamic Input Placeholders**: Chat widget placeholders can now be loaded dynamically from backend configuration settings.
+  - **Multi-Line Input Support**: Improved standard input to support multi-line messaging using `Shift+Enter`.
+  - **Message Context Thread Limiting**: Guarded Workers AI/LLM limits and token footprint by enforcing thread message limit options (`maxMessagesPerThread`) to discard stale context messages.
 
 ## 2026-05-11
 - **Dynamic Aggregate Counters via Selection**:

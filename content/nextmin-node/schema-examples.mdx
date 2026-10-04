@@ -1,6 +1,7 @@
 ---
-title: Define schemas in nextmin-node
+title: JSON Schema Definition Guide — Field Types, Relations & RBAC
 sidebarTitle: Schema guide
+description: Complete JSON schema specification for NextMin. Configure field types, database relations, inheritance, validation, RBAC policies, and custom QR actions.
 ---
 
 > Important: Schema file naming
@@ -225,6 +226,81 @@ Unlike virtual fields, Aggregated Summaries are physically stored and automatica
 }
 ```
 
+### Dynamic References (`refPath`) & Attribute Immutability (`readOnly`)
+
+NextMin supports dynamic relation resolution per document using `refPath`, and strict field immutability using `readOnly`.
+
+#### Dynamic References (`refPath`)
+
+When a reference field can point to different models dynamically depending on another field's value in the same document (e.g. `subjectId` pointing to `Doctors` or `Hospitals` based on `subjectType`), set `"refPath": "<fieldName>"`:
+
+```json
+{
+  "modelName": "Ratings",
+  "attributes": {
+    "subjectType": {
+      "type": "string",
+      "required": true,
+      "enum": ["Doctors", "Hospitals"],
+      "readOnly": true
+    },
+    "subjectId": {
+      "type": "ObjectId",
+      "refPath": "subjectType",
+      "show": "fullName",
+      "required": true,
+      "readOnly": true
+    }
+  }
+}
+```
+
+- **Strict Enum Rule**: The attribute specified by `refPath` (e.g. `subjectType`) MUST exist in the same schema and define an `enum` string array containing the target model names.
+- **Mutual Exclusion**: `refPath` and `ref` are mutually exclusive. If both are specified, `refPath` takes precedence.
+- **Terminal Developer Warnings**: During server initialization, `nextmin-node` automatically validates `refPath` definitions and logs warnings to the terminal if:
+  1. The target field specified in `refPath` does not exist in the same schema.
+  2. The target field is not a string attribute with an `enum` array of target model names.
+  3. An `enum` string value does not correspond to any registered schema model.
+  4. Both `ref` and `refPath` are declared on the same attribute.
+- **Runtime Safety**: If a document has a missing/invalid `refPath` value or unpopulated reference, `nextmin-node` safely keeps the raw ID without throwing uncaught exceptions.
+
+#### Attribute Immutability (`readOnly`)
+
+Set `"readOnly": true` or `"editable": false` on an attribute definition:
+- **API Level**: Update requests (`PUT /:model/:id`) automatically strip `readOnly` attributes from the update payload.
+- **Admin UI**: `@airoom/nextmin-react` renders disabled inputs in form views for `readOnly` fields.
+
+## Authentication & Registration Configuration (Users Schema Only)
+
+NextMin supports specialized configuration parameters on the `Users` model (and models extending `Users`) to control authentication mechanisms, secure registration flows, and implement OTP verification gates.
+
+```json
+{
+  "modelName": "Users",
+  "authServices": ["email", "username", "phone"],
+  "phoneVerification": true,
+  "publicRegisterFields": [
+    "username",
+    "email",
+    "phone",
+    "password",
+    "role"
+  ],
+  "roleDefaultStatuses": {
+    "buyer": "active",
+    "developer": "pending",
+    "agent": "pending",
+    "user": "active"
+  }
+}
+```
+
+- **`authServices`**: `string[]` Array of allowed login identifiers. Supports `"email"`, `"username"`, and `"phone"`. Defaults to `["email", "username"]` if omitted. When `"phone"` is included, users can register and login using their phone numbers.
+- **`phoneVerification`**: `boolean` Enforces SMS OTP verification during registration. When enabled, a valid one-time password (`otp`) matching the user's `phone` must be supplied to the registration endpoint.
+  - **Role-Level Overrides**: You can enable or disable phone verification selectively for subclass schemas (e.g., a `Developers` schema extending `Users` can set `"phoneVerification": true` even if `Users` has it set to `false`).
+- **`publicRegisterFields`**: `string[]` Whitelist of fields a public signup client is allowed to submit. If a client attempts to submit administrative fields (like `status` or unknown custom fields) not present in the whitelist, a `400 Bad Request` is returned. If omitted, all fields are permitted for backward compatibility.
+- **`roleDefaultStatuses`**: `Record<string, string>` Maps user roles to their default initial status. In multi-role portals, you can enforce that developers and agents register in a `pending` state awaiting admin approval, while buyers are activated immediately.
+
 ## Access and methods
 
 - allowedMethods: enable or disable CRUD endpoints per model:
@@ -253,6 +329,22 @@ Unlike virtual fields, Aggregated Summaries are physically stored and automatica
 Notes:
 - Public means unauthenticated requests.
 - Roles are additive; if multiple apply, the most permissive per action wins.
+
+### Deep Access Merging
+When extending a base model (or loading schemas dynamically), NextMin performs a **deep merge** on the `access` block. This guarantees that fields in child schemas (like custom role overrides, default values, or local restrictions) merge into the base model's default access rules, rather than overriding the entire block. This prevents security leaks where child schemas accidentally nullify base authentication policies.
+
+### Sequential Role-Based & Owner Permissions
+NextMin implements a context-aware ownership evaluation system:
+1. **Dynamic `"owner"` Ownership**: When checking ownership rules, the system determines the relationship dynamically based on context:
+   - For **standard users**, ownership matches their own record (`document.id === currentUserId`).
+   - For **administrators (admin role)**, ownership resolves to their own record **plus** any records they created (`document.createdBy === currentUserId`).
+2. **Owner-Scoped Query Filtering**: When an administrator requests a list of records under an `"owner"` policy, NextMin automatically applies an `ownerFilter` returning `{ or: [{ id: currentUserId }, { createdBy: currentUserId }] }`. This allows them to see and manage only their own accounts and users they created.
+3. **Superadmin Global Bypass**: The `superadmin` role possesses global bypass permissions, allowing it to view, update, or delete all records (including system/administrative records) without local owner-scoping filters.
+
+### Role Escalation Guards
+To prevent privilege escalation during user registration and creation:
+- **Admin Assignment Protection**: Standard administrators and public registrants are explicitly forbidden from assigning high-privilege roles (like `admin` or `superadmin`) to new users.
+- **Role Hierarchy Enforcement**: The server validates assigned roles asynchronously against role hierarchies. Any attempt to register or update a user with a role equal to or higher than the current user's role (unless initiated by a `superadmin`) will be rejected with a `403 Forbidden` error.
 
 ## Extending a base model (inheritance)
 
@@ -283,6 +375,8 @@ Example Doctors schema:
 
 Runtime behavior (server):
 - The child collection stores a private `baseId` linking to its base record; this field is never exposed in schema output or list/detail responses.
+- **Inherited Field Stripping (`stripInheritedIfNoBase`)**: When an extended record exists without a linked base user (`baseId` is null or empty), inherited user fields (like `username`, `password`, `email`) are automatically excluded from the JSON response to keep API output clean.
+- **Intelligent Base Creation**: During creation, a base user is only created if meaningful user fields are explicitly provided in the payload (ignoring auto-injected defaults like `status`, `role`, or `type`), preventing orphaned user accounts.
 - Create: POST /rest/doctors can include both Users fields (e.g., email, username, password) and Doctors fields. The server splits them, creates Users, then creates Doctors with `baseId` set automatically. You do not need to send `baseId`.
 - Read: GET /rest/doctors and GET /rest/doctors/:id return merged documents: Users + Doctors. If a field exists on both, Doctors wins.
 - Update: PUT /rest/doctors/:id may include Users and/or Doctors fields. The server partitions and updates both sides, then returns the merged doc. Changing `baseId` is not allowed.
@@ -291,6 +385,33 @@ Runtime behavior (server):
 
 UI behavior (nextmin-react):
 - The SchemaForm hides `baseId` even if policies would expose private fields. When editing an existing record, the hidden `baseId` value is preserved so updates work like a foreign key.
+- The DynamicViewer Drawer and tables automatically omit inherited User fields if the document is not linked to a base account.
+
+## Custom Actions Configuration (`customActions`)
+
+You can define custom row-level actions directly in your schema definition:
+
+```json
+{
+  "modelName": "Doctors",
+  "customActions": [
+    {
+      "name": "qr",
+      "label": "QR Code",
+      "action": "qr",
+      "urlTemplate": "https://yourdomain.com/doctor/{slug}"
+    },
+    {
+      "name": "viewWebsite",
+      "label": "View Live",
+      "href": "https://yourdomain.com/doctor/{slug}"
+    }
+  ]
+}
+```
+
+- **`action: "qr"`**: Automatically renders a QR Code button opening `QRCodeModal`, interpolating dynamic fields like `{slug}` or `{id}` into destination URLs, offering instant SVG and 1024px PNG downloads.
+- **`isSystemRow` Protection**: Individual documents or schemas can mark baseline system records to automatically disable Delete and Edit actions in `@airoom/nextmin-react` data tables.
 
 ## Tips for designing your schema
 

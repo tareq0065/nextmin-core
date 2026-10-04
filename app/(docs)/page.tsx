@@ -41,25 +41,37 @@ const FEATURE_CARDS = [
   },
   {
     title: "Multi-DB Freedom",
-    description: "Universal NMAdapter for SQL, MongoDB, and more. Mix and match with ease.",
+    description: "Universal NMAdapter for PostgreSQL, MySQL, SQLite, and MongoDB.",
     icon: Database,
     color: "blue"
   },
   {
     title: "Auth & Policies",
-    description: "Fine-grained RBAC and ownership policies baked directly into your JSON schemas.",
+    description: "JWT, phone OTP login, fine-grained RBAC, and ownership policies in JSON schemas.",
     icon: Shield,
     color: "purple"
   },
   {
     title: "Schema-Driven UI",
-    description: "Beautiful forms, tables, and dashboards generated automatically from your models.",
+    description: "Production React admin panels, CRUD tables, and Tiptap editor from your models.",
     icon: Layout,
     color: "orange"
   }
 ];
 
 const FAQS = [
+  {
+    question: "How does NextMin compare to Refine or react-admin?",
+    answer: "Unlike Refine or react-admin which focus heavily on frontend data hooks and require a manual backend, NextMin is a complete full-stack solution: `@airoom/nextmin-node` auto-generates your production-ready Express REST API, database schema migrations, and role-based permissions, while `@airoom/nextmin-react` provides pre-wired admin UI tables, drawers, forms, and rich-text editing with zero boilerplate."
+  },
+  {
+    question: "Which databases are supported?",
+    answer: "NextMin features the universal `NMAdapter` which natively supports PostgreSQL, MySQL, SQLite, and MongoDB. You can even mix and match different databases across separate models within the same project."
+  },
+  {
+    question: "Can I use NextMin with Next.js App Router and Vite?",
+    answer: "Yes! The `@airoom/nextmin-react` package is built for modern React frameworks, including Next.js App Router, Vite, and Remix. You can mount complete admin apps or embed individual CRUD components into existing pages."
+  },
   {
     question: "How does the schema hot-reloading work?",
     answer: "NextMin watches your `schemasDir` for changes. Whenever you edit and save a JSON schema file, the server instantly re-validates and hot-swaps the model in memory. Your API routes update immediately without a server restart."
@@ -181,13 +193,13 @@ export default function Home() {
               </div>
 
               <h1 className="text-4xl md:text-6xl xl:text-7xl font-black tracking-tighter text-neutral-900 leading-[0.9] mb-6">
-                Backend <br />
-                <span className="text-neutral-900 italic drop-shadow-sm">Infrastructure</span> <br />
-                Simplified.
+                Next.js Admin & <br />
+                <span className="text-neutral-900 italic drop-shadow-sm">Schema-Driven</span> <br />
+                REST API.
               </h1>
 
               <p className="text-lg md:text-xl text-neutral-500 leading-relaxed font-semibold max-w-xl">
-                The unified system that turns <span className="text-neutral-900 uppercase tracking-tighter font-black">schemas</span> into <span className="text-neutral-900 underline decoration-neutral-900/10 underline-offset-8">Production Assets</span>.
+                The unified TypeScript framework that turns <span className="text-neutral-900 uppercase tracking-tighter font-black">schemas</span> into <span className="text-neutral-900 underline decoration-neutral-900/10 underline-offset-8">Production Admin Dashboards & APIs</span>.
               </p>
             </motion.div>
 

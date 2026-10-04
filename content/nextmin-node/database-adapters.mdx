@@ -1,6 +1,7 @@
 ---
-title: Database Adapters
+title: Database Adapters — Connect SQLite, PostgreSQL, MySQL & MongoDB
 sidebarTitle: Database Adapters
+description: Configure multi-database connectivity with NextMin NMAdapter. Seamlessly connect PostgreSQL, MySQL, SQLite, and MongoDB to your auto-generated CRUD REST API.
 ---
 
 # Database Adapters
@@ -27,8 +28,17 @@ const dbAdapter = new NMAdapter({
   type: 'sqlite',
   database: 'database.sqlite',
   synchronize: true, // Auto-sync schema changes
+  enableCache: true, // Keyv-based in-memory / Redis query caching (default: true)
 });
 ```
+
+### High-Performance Query Caching & Auto-Indexing
+
+`NMAdapter` includes built-in performance optimization layers:
+
+- **Keyv Query Caching**: Frequently executed read queries (`read` & `count`) are cached in memory or Redis.
+- **Collection Version Invalidation**: Whenever a record is created, updated, or deleted, `NMAdapter` increments the collection version key (`nm:collection:version:<collection>`), instantly invalidating stale cache entries in O(1) time without clearing unrelated cache keys.
+- **Automatic Relation & Search Indexing**: Upon schema registration (`registerSchemas`), `NMAdapter` automatically creates indexes on `ref` relation fields and frequently searched/sorted fields (`name`, `title`, `slug`, `createdAt`).
 
 ### Multiple Database Connections
 

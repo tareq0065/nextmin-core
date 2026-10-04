@@ -1,14 +1,39 @@
 ---
-title: Documentation
+title: NextMin Documentation — Next.js Admin Panel & REST API Framework
 sidebarTitle: Introduction
+description: Official documentation for NextMin, the TypeScript full-stack framework for auto-generating REST APIs, RBAC, and modern React admin panels from schemas.
 ---
 
-# Documentation
+# NextMin Documentation
 
-This section contains the package documentation only. Use the links below to jump directly to the guides.
+Welcome to NextMin, the developer-first framework designed to turn TypeScript and JSON schemas into production-grade REST APIs, multi-database backends, and beautiful React admin panels with zero boilerplate.
 
-## Packages
+Whether you are building an internal admin dashboard, a customer portal, or rapid prototyping a backend service, NextMin provides the server runtime and UI components you need.
 
-- Server toolkit: [nextmin-node →](/docs/nextmin-node)
-- React admin: [nextmin-react →](/docs/nextmin-react)
-- Changelogs: [Release notes →](/docs/release-notes)
+## Core Packages
+
+NextMin is split into modular packages so you can adopt either the backend engine, the React admin UI, or both together:
+
+| Package | Role | Description |
+| :--- | :--- | :--- |
+| [`@airoom/nextmin-node`](/docs/nextmin-node) | Server Toolkit | Schema loader, Express REST router, multi-database adapter (SQLite, Postgres, Mongo), JWT/OTP auth, role-based access control (RBAC), and realtime events. |
+| [`@airoom/nextmin-react`](/docs/nextmin-react) | Admin UI Toolkit | Headless React components, HeroUI data tables, auto-generated CRUD forms, Drawer record viewer, Tiptap rich-text editor, and Redux state provider. |
+
+## Quick Navigation
+
+- **Backend Development**:
+  - [Getting Started with `nextmin-node`](/docs/nextmin-node)
+  - [Database Adapters (Postgres, SQLite, MongoDB)](/docs/nextmin-node/database-adapters)
+  - [Schema Definition & Field Relations](/docs/nextmin-node/schema-examples)
+  - [REST API Endpoints & Auth Reference](/docs/nextmin-node/api-examples)
+  - [Cross-Model Search API](/docs/nextmin-node/search)
+  - [Pluggable File Storage (S3 & Local)](/docs/nextmin-node/storage)
+  - [Namespaced Event System](/docs/nextmin-node/events)
+- **Frontend Admin Panel**:
+  - [Getting Started with `nextmin-react`](/docs/nextmin-react)
+  - [Record Viewer Drawer](/docs/nextmin-react/viewer)
+  - [Tiptap Rich Text Editor](/docs/nextmin-react/rich-text-editor)
+- **Guides & Updates**:
+  - [Features & Architecture Overview](/docs/why-nextmin)
+  - [Migration Guide: Upgrading to 2.x](/docs/migration-guide)
+  - [Release Notes & Changelogs](/docs/release-notes)

@@ -1,0 +1,198 @@
+---
+title: AI Chat Widget
+sidebarTitle: AI Chat Widget
+---
+
+# AI Chat Widget (`@nextmin/chat`)
+
+A fully-featured, zero-dependency AI chat widget for React and Next.js applications. It interfaces with the `nextmin-node` backend to provide an intelligent, context-aware chatbot for your website, capable of searching database schemas, static site pages, and custom knowledge documents.
+
+---
+
+## Features
+
+- 💬 **Multi-Session Threads**: Users can manage multiple named chat conversations, persisted in `localStorage`.
+- 🔄 **Cross-Tab Sync**: Active thread and message states stay synchronized across multiple open browser tabs.
+- 🔗 **Absolute Link Resolution**: Automatically constructs absolute clickable links using the configured site base URL.
+- 🎨 **Fully Customisable**: Header, bot name, welcome messages, and colors are customizable via component props.
+- 📝 **Markdown & Code Support**: Full markdown rendering with language labels and a **Copy Code** button for code blocks.
+- ⚡ **Streaming Responses**: Supports word-by-word streaming with an animated typing indicator.
+- 🔌 **Offline/Local Model Fallback**: Automatically falls back to local GGUF execution when OpenAI is unavailable or disabled.
+
+---
+
+## Installation
+
+Install the chat widget package along with its peer dependencies in your React/Next.js frontend:
+
+```bash
+# npm
+npm install @nextmin/chat lucide-react
+
+# pnpm
+pnpm add @nextmin/chat lucide-react
+
+# yarn
+yarn add @nextmin/chat lucide-react
+```
+
+---
+
+## Quick Start
+
+Import the `ChatWidget` component and place it inside your root layout or main shell:
+
+```tsx
+import { ChatWidget } from '@nextmin/chat';
+
+export default function Layout({ children }) {
+  return (
+    <>
+      {children}
+      <ChatWidget
+        chatbotName="Acme Assistant"
+        headerText="Site Support Agent"
+        welcomeMessage="Hello! Ask me anything about our website or services."
+        uiHeaderColor="#3b82f6"
+        buttonBgColor="#2563eb"
+      />
+    </>
+  );
+}
+```
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `apiBaseUrl` | `string` | `'/api/nextmin'` | Base URL of your `nextmin-node` REST API. The widget automatically queries `{apiBaseUrl}/_chatwidget/message`. |
+| `chatbotName` | `string` | `'Assistant'` | Name of the assistant shown in the header and injected into the AI system prompt. |
+| `headerText` | `string` | `'AI Site Assistant'` | Subtitle shown under the chatbot name. |
+| `welcomeMessage` | `string` | `'Hello! I am here to help you...'` | Initial message sent by the bot on thread creation. |
+| `inputPlaceholder` | `string` | `'Ask about this site...'` | The placeholder text shown in the chat input field. |
+| `predefinedQuestions` | `string[]` | `[]` | Array of predefined question chips displayed to users for instant querying. |
+| `predefinedQuestionsHeader` | `string` | `'Most Asked'` | Header label shown directly above the predefined questions stack. |
+| `currentPath` | `string` | — | Current route pathname (e.g. from `usePathname()`), used to synchronize active page-scoped context. |
+| `autoResetOnPathChange` | `boolean` | `true` | When `true`, automatically closes and resets page-specific context when the user navigates away. |
+| `pageChatOptions` | `PageChatOptions` | `null` | Contextual page options `{ pagePath, pageTitle, context }` for page-specific assistance. |
+| `onClearPageChat` | `() => void` | — | Callback invoked when a page-scoped conversation is reset or closed. |
+| `uiHeaderColor` | `string` | `'#3b82f6'` | Left gradient color of the chat header panel. |
+| `buttonBgColor` | `string` | `'#2563eb'` | Right gradient color, FAB trigger background, user bubble color, and action button color. |
+| `widgetTriggerIconSvg` | `string` | — | Custom SVG string to replace the default FAB bubble icon. |
+
+---
+
+## Backend Integration (`nextmin-node`)
+
+The widget communicates with the `POST /_chatwidget/message` route on your Express backend. Enable the route by configuring `chatWidget` in the `APIRouter` options:
+
+```ts
+import { APIRouter } from '@airoom/nextmin-node';
+
+const nextminRouter = new APIRouter({
+  dbAdapter,
+  chatWidget: {
+    enabled: true,
+    siteUrl: process.env.FRONTEND_URL,          // e.g. "https://example.com"
+    scrapePaths: ['/', '/docs', '/about'],      // Static paths to crawl and index
+    whitelabelSchemas: ['Doctors', 'Services'], // Database schemas to extract and index
+    sourceType: 'both',                         // 'db' | 'site' | 'both'
+    autoCrawlIntervalMs: 3600000,               // Re-crawl / re-index frequency (1 hour)
+    maxMessagesPerThread: 15,                   // Session message limits to protect tokens
+    localModelPath: './model/gemma.gguf',       // Path to local GGUF model (offline fallback)
+    threads: 4                                  // CPU threads to allocate for local LLM
+  }
+});
+```
+
+### Direct Database Schema Indexing
+
+Instead of crawling rendered HTML pages only, NextMin can extract documents directly from your database schemas (`whitelabelSchemas`).
+- Records are serialized with structural fields (titles, qualifications, appointments, visiting hours, contact details, canonical paths).
+- To re-index database records manually from CLI:
+  ```bash
+  npx nextmin-node reindex
+  ```
+- Configure the OpenAI model via `OPENAI_MODEL` environment variable (defaults to `gpt-5.6-luna`).
+
+---
+
+## Page-Specific Chat & Page Context
+
+`ChatWidget` supports opening context-scoped chat sessions for specific pages (such as product pages, user profiles, or documentation articles) by passing `pagePath` in your component or helper options (e.g. `pagePath: "/products/widget-123"`).
+
+### How Page Context Resolution Works
+
+When `pagePath` is provided to `nextmin-node`:
+
+1. **Isolated Thread History**: The backend automatically scopes the thread session ID to `${threadId}_${cleanPathname}`. This guarantees page-specific chats maintain isolated thread history and never leak conversation state across different pages or items.
+2. **Generic Page Context Lookup**: `nextmin-node` automatically looks up context files matching the cleaned pathname in the following order:
+   - `.nextmin/scraped-pages/page-${cleanPathname}.txt`
+   - `openai/page-${cleanPathname}.txt`
+   - `.nextmin/scraped-pages/${cleanPathname}.txt`
+   - `openai/${cleanPathname}.txt`
+3. **Generic Support Prompting**: If page context is found, `nextmin-node` restricts the AI system prompt specifically to that page/item subject, ensuring accurate responses tailored exclusively to the active page context.
+
+---
+
+## Environment Variables
+
+Ensure the following environment variables are set in your backend configuration:
+
+| Variable | Description |
+|---|---|
+| `FRONTEND_URL` | The public base URL of your frontend (e.g. `https://example.com`). Used to resolve absolute URLs for links. |
+| `OPENAI_API_KEY` | (Optional) OpenAI API Key. Enables high-performance search and GPT-4o-mini streaming. |
+| `CLOUDFLARE_AI_SEARCH_SYSTEM_PROMPT` | (Optional) Override the default live support agent system instructions. |
+
+---
+
+## Offline Local AI Fallback
+
+If `OPENAI_API_KEY` is not present, or if an API call fails, the backend automatically cascades to the **Local AI engine**:
+
+1. **Local Search (TF-IDF)**: Performs local text search on scraped pages stored in `.nextmin/scraped-pages`. Features smart paragraph chunking and path-relevance boosting.
+2. **In-Process LLM**: Runs the offline GGUF model (e.g. Gemma) locally using `node-llama-cpp`.
+3. **Session Sequence Caching**: Caches active sequence contexts per `threadId` in memory to eliminate model-reloading latency on consecutive chat replies.
+
+---
+
+## Command Line & Programmatic Indexing (Reindex)
+
+`nextmin-node` provides a unified reindexing pipeline that supports **Database Schemas** (`whitelabelSchemas`), **Static Site Crawling** (`siteUrl`), and **Local Files**.
+
+### Programmatic Reindexing
+
+```ts
+import { reindex } from '@airoom/nextmin-node';
+
+await reindex({
+  chatWidget: {
+    enabled: true,
+    siteUrl: 'https://example.com',
+    whitelabelSchemas: ['Doctors', 'Hospitals', 'Specialities', 'Products'],
+    sourceType: 'both' // 'db' | 'file' | 'both'
+  },
+  dbAdapter // (Optional) Your database adapter instance
+});
+```
+
+### CLI Reindexing
+
+```bash
+# Perform incremental differential index (skips unmodified records using MD5 hash manifest)
+npx nextmin-node reindex
+
+# Force full re-index and rebuild from scratch
+npx nextmin-node reindex --force
+
+# Customize concurrency
+npx nextmin-node reindex --threads 8 --site-url https://example.com
+```
+
+Key Benefits:
+- **Differential MD5 Sync**: Automatically computes MD5 content hashes and skips unchanged database records or web pages.
+- **Single Directory**: All generated context files are stored directly in `.nextmin/scraped-pages/`.
+- **Automatic OpenAI Vector Store Sync**: Uploads new or updated files to the OpenAI Vector Store and updates `.nextmin/config.json` automatically.

@@ -1,6 +1,7 @@
 ---
-title: nextmin-react
+title: nextmin-react — Headless React Admin Dashboard & CRUD UI
 sidebarTitle: nextmin-react
+description: Production React and Next.js admin framework. Auto-generated CRUD data tables, HeroUI drawer viewers, dynamic forms, and Tiptap rich-text editing.
 ---
 
 # nextmin-react
@@ -68,9 +69,14 @@ Create an admin section that’s fully client-side. The provider wraps only the 
 'use client'
 
 import { NextMinProvider } from '@airoom/nextmin-react';
+import theme from '../../nextmin-theme';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return <NextMinProvider>{children}</NextMinProvider>;
+  return (
+    <NextMinProvider theme={theme}>
+      {children}
+    </NextMinProvider>
+  );
 }
 ```
 
@@ -117,11 +123,41 @@ The `SchemaForm` component drastically reduces boilerplate by rendering forms fr
 
 - **Auto Slug Generation**: Use `populateSlugFrom: "title"` in your schema to automatically generate URL-friendly slugs. It handles uniqueness (appending `-1`, `-2`) and supports multi-field sources (`populateSlugFrom: "firstName,lastName"`).
 - **Reference Selects**:
-  - `RefSingleSelect`: Searchable dropdown with alphabetical sorting.
-  - `RefMultiSelect`: Tag-based multi-select with search and sorting.
+  - `RefSelect` (`RefSingleSelect` & `RefMultiSelect`): Searchable async dropdowns with infinite scrolling, server-side search, eager label hydration (`fetchLabels`), and automatic column projection (`select: 'id,_id,name,title'`).
+  - **In-Flight Request Deduplication**: Duplicate concurrent GET requests from multiple dropdowns on the same form are automatically deduplicated on the client.
+- **Client Projection (`QueryBuilder.select`)**:
+  - `api.list()` and `QueryBuilder` support passing explicit column projections (e.g. `api.list('Hospitals', { select: 'id,name' })`), ensuring the backend only selects required fields from the database.
 - **Improved JSON Groups**: Support for recursive `json-group` nesting, allowing complex data structures to be managed with full field support (references, dates, etc.) at any depth.
 - **Enhanced Validation**: Automatic propagation of `minLength`, `maxLength`, and `pattern` (regex) constraints from schema to UI fields.
-- **Rich Text**: Fields with `rich: true` render a Tiptap-based editor with slash commands and sanitized output.
+- **Dynamic References (`refPath`)**: Support for schema-driven dynamic relations. When an attribute specifies `refPath: "discriminantField"`, `<RefSelect>` listens to the form state and switches its target collection dynamically.
+- **Attribute Immutability (`readOnly` / `editable: false`)**: Fields marked with `readOnly: true` or `editable: false` in schema definitions automatically render as disabled/read-only in the UI.
+- **Form Validation Propagation**: Error messages and `isInvalid` states are seamlessly propagated to all form components including Text inputs, Passwords, Textareas, Selects, Radios, Checkboxes, Date/Time pickers, and RefSelects.
+- **Rich Text**: Fields with `rich: true` render an enhanced Tiptap-based editor with slash commands, font styling, and sanitized output.
+
+## Data Table (`DataTableHero`)
+
+The admin list views are powered by `DataTableHero`, a feature-packed data table component:
+
+- **Multi-Select & Bulk Actions**: Select multiple rows via checkboxes. A sticky floating action bar displays the number of selected records and provides batch actions such as **Bulk Delete** with confirmation modals (`ConfirmDialog`).
+- **Schema-Driven Custom Actions**: Add custom row action buttons by declaring `customActions` in your schema:
+  ```json
+  {
+    "customActions": [
+      {
+        "name": "qr",
+        "label": "QR Code",
+        "action": "qr",
+        "urlTemplate": "https://yourdomain.com/items/{slug}"
+      }
+    ]
+  }
+  ```
+- **Built-in QR Code Generator (`QRCodeModal`)**:
+  - Automatically rendered for actions with `action: "qr"` or `type: "qr"`.
+  - Interpolates dynamic record fields like `{slug}` and `{id}` into destination URLs.
+  - Live SVG preview with copy link button, open in new tab button, and one-click downloads for SVG and high-resolution PNG (1024x1024).
+- **Protected System Rows**: System records marked by the schema prevent accidental deletion or modification by disabling action buttons with informative tooltips.
+- **Isolated Cell Selection**: Interactive elements inside cells (links, copy triggers, chips) prevent unwanted row selection when clicked.
 
 ## Viewer (Drawer)
 
@@ -138,6 +174,50 @@ See details and API: [Viewer (Drawer)](/docs/nextmin-react/viewer)
 
 - **Data Table Custom Actions**: Inject custom action buttons horizontally into any row by wrapping the standard table component. This allows firing distinct side-effects, navigations, or modal dialogs specific to a single document instance.
 - **Conditional Role-Based Password Fields**: During standard account creation flows (e.g. creating different types of Users with diverse schema types), the password inputs intelligently hide or require themselves based entirely on the specific access roles targeted, reducing admin friction.
+
+## Dynamic Theme System
+
+Customize the nextmin admin dashboard layout, styling, and colors using a config file placed in the host project's root.
+
+Create a `nextmin-theme.ts` or `nextmin-theme.js` at the root of your Next.js application:
+
+```typescript
+import type { ThemeConfig } from '@airoom/nextmin-react';
+
+export default {
+  // Layout background color
+  mainAdminBgColor: '#e0f2fe',
+  // Sidebar container color
+  sidebarColor: '#0f172a',
+  // Active sidebar link background
+  activeMenuBgColor: '#38bdf8',
+  // Active sidebar link text color
+  activeMenuTextColor: '#ffffff',
+  // Standard sidebar link text color
+  menuTextColor: '#94a3b8',
+  // Sidebar link hover background
+  menuHoverBgColor: '#1e293b',
+  // Sidebar elements text color
+  sidebarTextColor: '#f8fafc',
+  // Sidebar border colors
+  sidebarBorderColor: '#1e293b',
+  // Top nav background
+  topNavBgColor: '#ffffff',
+  // Top nav height
+  topNavHeight: '70px',
+  // Height of forms inputs/selects and table filter headers
+  inputHeight: '48px',
+  // Border radius of inputs, selects, and buttons
+  inputRadius: '12px',
+  // Sidebar width
+  sidebarWidth: '280px',
+  // Sidebar alignment layout: 'left' or 'right'
+  sidebarPosition: 'left',
+  // HeroUI primary button and control color
+  primaryColor: '#38bdf8',
+} as ThemeConfig;
+```
+
 
 ## TypeScript
 

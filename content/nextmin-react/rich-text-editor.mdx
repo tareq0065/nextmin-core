@@ -1,6 +1,7 @@
 ---
-title: Rich Text Editor
+title: Rich Text Editor — Tiptap-Powered Markdown & HTML Editor
 sidebarTitle: Rich Text Editor
+description: Embed a block-based Tiptap rich text editor in your NextMin admin panels with font presets, custom font sizes, slash commands, and clean HTML output.
 ---
 
 # Rich Text Editor
@@ -25,11 +26,32 @@ To use the rich text editor for a field in your schema, simply set the `rich` pr
 
 ### Slash Commands
 Type `/` in an empty paragraph to open the command menu. This allows you to quickly insert:
-- **Headings**: H1, H2, H3
+- **Headings**: H1, H2, H3, H4, H5, H6
 - **Lists**: Bullet and Numbered lists
 - **Media**: Images
 - **Layouts**: 2-Column and 3-Column blocks
 - **Embeds**: Embed other schema data (Tables, Lists, etc.)
+
+### Typography & Font Families
+The editor toolbar includes a dedicated font family picker supporting both English and Bengali typography:
+- **Bengali Fonts**: Hind Siliguri, Kalpurush, SolaimanLipi, Noto Serif Bengali, Anek Bangla.
+- **Standard Fonts**: Inter, Roboto, Playfair Display, Space Mono, Sans-serif, Serif, Monospace.
+
+### Font Sizes & Custom Font Size Modal
+Fine-tune text hierarchy using the font size tools:
+- **Quick Presets**: Select from standardized sizes (`12px`, `14px`, `16px`, `18px`, `20px`, `24px`, `30px`, `36px`).
+- **Custom Font Size Modal**: Click "Custom..." in the font size dropdown to open an interactive sizing dialog.
+  - Supports units: `px` (6px–150px), `rem` (0.5rem–8rem), `em`, `pt` (5pt–115pt), and `%` (50%–1000%).
+  - Includes real-time format validation (`validateAndFormatFontSize`) and one-click quick unit pills.
+
+### Clean Heading Enter (`ClearMarksOnHeaderEnter`)
+When typing inside any heading (H1–H6), pressing `Enter` at the end of the line automatically creates a clean, unstyled paragraph without carrying over bold, heading level, or styling marks into the new block.
+
+### Paste Sanitization (`transformPastedHTML`)
+Content copied from Microsoft Word, Outlook, or external web pages often contains bloated XML markup, comments, and invalid tags. The editor includes automatic HTML transformation that strips:
+- HTML comments (`<!-- ... -->`)
+- Microsoft Office tags (`<o:p> ... </o:p>`)
+- Extraneous metadata tags (`<xml>`, `<meta>`, `<link>`)
 
 ### Image Management
 The editor supports drag-and-drop image uploads and standard file selection.

@@ -1,30 +1,49 @@
 ---
-title: NextMin Features Overview
-sidebarTitle: Features Overview
-description: A concise overview of the features provided by nextmin-node and nextmin-react.
+title: Why NextMin? — Features & Comparison vs Refine and React-Admin
+sidebarTitle: Why NextMin?
+description: Discover why developers choose NextMin over traditional admin panel frameworks. Compare NextMin vs Refine, React-Admin, and Strapi for schema-driven CRUD backends.
 ---
 
-# NextMin Features Overview
+# Why NextMin?
 
-This page summarizes what the two packages provide. No extra site features—only package capabilities.
+Modern web teams waste countless hours rebuilding the same foundational pieces: Express CRUD routes, authentication, role-based access control, file storage adapters, pagination, and React admin tables.
 
-- Database: **Multi-database support** via `NMAdapter` (SQLite, Postgres, MySQL, MongoDB, etc.)
-- Search: **Advanced Query Engine** with `$nestedSearch` and specialized operators (`^`, `$`)
-- Maintenance: **Cleanup Utility** for automating database optimization
-- Events: **Universal Event System** for global and granular model hooks
-- Live updates via `RealtimeService` (Socket.io)
-- Utilities: API key generator, default data seeding, schema loader
+**NextMin eliminates that repetitive work** by letting your data schema drive both your server API and your client-side admin dashboard.
 
-Go to: [nextmin-node docs →](/docs/nextmin-node)
+## NextMin vs Traditional Admin Frameworks
 
-## nextmin-react (client)
+| Feature | NextMin | Refine | React-Admin | Strapi / Directus |
+| :--- | :--- | :--- | :--- | :--- |
+| **Architecture** | Full-Stack (Node + React) | Frontend Only | Frontend Only | Standalone CMS Server |
+| **Backend Generation** | Automatic Express REST API | Requires external API | Requires external API | Monolithic backend |
+| **Schema Definition** | Lightweight JSON / TS Schemas | Requires manual typing | Manual data provider | GUI / CMS schema builder |
+| **Multi-Database** | Native `NMAdapter` (Postgres, SQLite, Mongo) | Dependent on backend | Dependent on backend | DB bound to instance |
+| **Realtime Sync** | Built-in Socket.io events | Needs external WebSocket | Needs external adapter | Custom webhook setup |
+| **Admin UI Customization** | Modular HeroUI & Tailwind | AntD / Chakra / MUI | Material UI | Heavy admin dashboard |
+| **Bundle Footprint** | Extremely lightweight | Medium to Large | Medium to Large | Very Large |
 
-- **Admin Branding**: Customizable site name, logo, and theme via central Settings
-- **SchemaForm**: Auto-generated forms with support for deep JSON nesting and automatic validation
-- **Ref Selects**: Searchable and virtualized single/multi select for large datasets
-- **Rich Text**: Tiptap-based editor with sanitized HTML output and professional styling
-- **DynamicViewer**: High-performance row details viewer with deep object inspection
-- **Real-time UI**: Automatic dashboard and list reloads via `RealtimeClient`
-- **Hooks/Utils**: Google address autocomplete, data formatting, and sync helpers
+---
 
-Go to: [nextmin-react docs →](/docs/nextmin-react)
+## Key Capabilities
+
+### 1. `nextmin-node` (Server Toolkit)
+
+- **Express Router Generator**: Mount a full REST API for all your models with a single line: `createNextMinRouter(options)`.
+- **Universal Multi-Database Support**: Connect PostgreSQL, MySQL, SQLite, and MongoDB using `NMAdapter`.
+- **Granular Security & RBAC**: Configure role permissions, owner-only checks, read masks, and write restrictions directly in your schema.
+- **Pluggable File Storage**: Stream uploads to AWS S3 or store on local disk with automatic disk caching and MIME-type sanitization.
+- **Namespaced Event Bus**: Subscribe to model lifecycles (e.g., `orders:before:create`, `users:after:update`) to orchestrate third-party integrations and notifications.
+- **Cross-Model Text Search**: Perform fast, case-insensitive searches across multiple database collections via `POST /search`.
+- **Phone OTP & Passwordless Auth**: Native support for SMS/WhatsApp OTP login and 2-step password recovery.
+
+👉 Read the [nextmin-node documentation →](/docs/nextmin-node)
+
+### 2. `nextmin-react` (Client Admin Toolkit)
+
+- **Auto-Generated CRUD UI**: Instant data tables, filters, bulk actions, and pagination rendered automatically from your backend schemas.
+- **HeroUI Drawer Viewer**: Inspect complete records with automatic full-document hydration, image previews, and JSON tree formatting.
+- **Tiptap Rich-Text Editor**: Block-based editor with font size presets, image drag-and-drop, and clean HTML output.
+- **Dynamic SchemaForm**: Form generation with validation, nested JSON objects, reference pickers, and Google Address autocomplete.
+- **Admin Branding & Theming**: Built-in settings page for customizing brand colors, company logos, and navigation titles.
+
+👉 Read the [nextmin-react documentation →](/docs/nextmin-react)

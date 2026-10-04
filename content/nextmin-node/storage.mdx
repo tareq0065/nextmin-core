@@ -1,6 +1,7 @@
 ---
-title: Storage Adapters
+title: Storage Adapters — AWS S3 & Local File Uploads with Image Fallback
 sidebarTitle: Storage Adapters
+description: Pluggable file storage system for NextMin. Stream uploads to AWS S3 or local disk storage with disk caching, SVG image fallback, and UTF-8 filename sanitization.
 ---
 
 # Storage Adapters
@@ -101,4 +102,33 @@ module.exports = {
 }
 ```
 
-This ensures that images like `/images/uploads/photo.jpg` are transparently proxied through your backend while appearing to come from your main domain.
+### Dynamic Image Resizing & WebP Optimization
+
+The file proxy endpoint `GET /rest/files/:key(*)` includes high-performance image processing (powered by `sharp`):
+
+- **Default WebP Format**: All image uploads (JPEG, JPG, PNG, WEBP) are automatically served in optimized **WebP** format (`image/webp`) by default for fast loading times and reduced bandwidth.
+- **Dynamic Resizing**: Pass width (`w`), height (`h`), quality (`q`), or format (`fmt`) query parameters:
+  - `GET /rest/files/uploads/avatar.jpg?w=300&h=300` -> Resizes to 300x300 WebP.
+  - `GET /rest/files/uploads/banner.jpg?w=800&q=90` -> Resizes to 800px width with 90% quality.
+  - `GET /rest/files/uploads/icon.png?fmt=png` -> Converts to PNG format.
+  - `GET /rest/files/uploads/photo.jpg?raw=true` -> Serves original raw file without conversion.
+- **Disk Caching**: Resized images are cached on disk under `.nextmin/cache/resized/` with MD5 hashes of transform parameters (`key + width + height + quality + format`), delivering lightning-fast cache hits (`X-Cache: HIT`) without invoking image processing pipelines again.
+- **Graceful SVG Placeholder Fallback**: If an image is not found in storage (404/NoSuchKey), the proxy returns a sleek SVG placeholder (`image/svg+xml`) with HTTP 200, ensuring UI cards, avatars, and listings never display broken image icon errors.
+- **CDN & Browser Caching**: All proxied images return long-lived cache headers (`Cache-Control: public, max-age=31536000, immutable`), ensuring sub-millisecond cached responses via Cloudflare/browser cache.
+
+## Original Filenames & Duplicate Prevention
+
+- **Clean Original Names**: File uploads retain their original base name (slugified and sanitized, e.g. `"Doctor John.jpg"` -> `"doctor-john.jpg"`) without appending random hash suffixes.
+- **Unicode Support**: The slugifier natively supports Unicode letters and characters (`\p{L}\p{N}\p{M}`), preserving Bengali, Arabic, and other non-Latin scripts.
+- **UTF-8 Filename Repair**: Automatically repairs Multer's default Latin1/ISO-8859-1 multipart header decoding, guaranteeing accurate non-ASCII file names.
+- **S3 / Cloudflare R2 Metadata Sanitization**: Custom upload metadata is automatically scrubbed of non-printable or non-ASCII characters to comply strictly with AWS S3 HTTP header specifications and avoid runtime header exceptions.
+- **Duplicate Prevention**: If a file with the exact same name already exists in storage, `@airoom/nextmin-node` rejects the upload with **HTTP 409 Conflict**:
+  ```json
+  {
+    "error": true,
+    "code": "FILE_EXISTS",
+    "message": "File 'doctor-john.jpg' already exists in storage. Please rename the file manually and try again."
+  }
+  ```
+
+

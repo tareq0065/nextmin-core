@@ -8,6 +8,10 @@
   "nextmin-react": {
     "title": "nextmin-react"
   },
+  "nextmin-chat": {
+    "title": "AI Chat Widget",
+    "display": "hidden"
+  },
   "migration-guide": {
     "title": "Migration Guide"
   },

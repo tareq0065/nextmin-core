@@ -1,7 +1,7 @@
 ---
-title: Event System
+title: Event System — Realtime Hooks & Namespaced Data Bus
 sidebarTitle: Event System
-description: Decouple your business logic from CRUD operations using our namespaced event system.
+description: Decouple backend business logic from CRUD operations using NextMin's EventEmitter architecture, universal lifecycle hooks, and Socket.io broadcasts.
 ---
 
 # Event System
@@ -41,6 +41,8 @@ events.on(Events.AFTER_CREATE, ({ modelName, result }) => {
 | `BEFORE_DELETE` | `before:doc:delete` | Before record removal (payload: `{ modelName, id }`) |
 | `AFTER_DELETE` | `after:doc:delete` | After successful deletion (payload: `{ modelName, id, result }`) |
 | `SCHEMA_UPDATE` | `schema:update` | Fired when schemas are hot-swapped |
+| `AUTH_SIGNUP` | `auth:signup` | Fired when a new user registers (payload: `{ user }`) |
+| `AUTH_LOGIN` | `auth:login` | Fired when a user successfully logs in (payload: `{ user, token }`) |
 
 ---
 

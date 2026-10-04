@@ -1,6 +1,7 @@
 ---
-title: REST API examples (nextmin-node)
+title: REST API Reference & Endpoints — Authentication & CRUD Examples
 sidebarTitle: API examples
+description: Comprehensive REST API reference for NextMin Node. Explore endpoints for Phone OTP authentication, password reset, CRUD operations, batch queries, and search.
 ---
 
 # REST API examples for nextmin-node
@@ -98,7 +99,33 @@ Response shape (example):
 
 Base path: /auth/users
 
+### Send OTP (Phone Verification)
+
+Request an OTP code for verification before registration.
+
+```bash
+curl -X POST http://localhost:8081/rest/auth/users/send-otp \
+  -H "x-api-key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+8801700000000"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "OTP sent successfully."
+}
+```
+
+*Note: This triggers an `auth:otp:send` event with `{ phone, otp }` on the backend, allowing your application to send the SMS.*
+
 ### Register
+
+Standard email/username registration:
 
 ```bash
 curl -X POST http://localhost:8081/rest/auth/users/register \
@@ -111,29 +138,87 @@ curl -X POST http://localhost:8081/rest/auth/users/register \
   }'
 ```
 
-Response:
+Registration with **Phone Verification (OTP)** enabled:
+
+```bash
+curl -X POST http://localhost:8081/rest/auth/users/register \
+  -H "x-api-key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+8801700000000",
+    "password": "supersecret123",
+    "otp": "123456"
+  }'
+```
+
+**Response:**
 
 ```json
 {
   "success": true,
   "message": "Registration successful.",
-  "data": { "token": "<JWT>", "user": { "id": "...", "email": "alice@example.com", "username": "alice", "status": "active" } }
+  "data": { "token": "<JWT>", "user": { "id": "...", "phone": "+8801700000000", "username": "+8801700000000", "status": "active" } }
 }
 ```
 
-### Login (email or username)
+### Login (email, username, or phone)
+
+Log in using credentials (email, username, or phone number if configured in `authServices`).
 
 ```bash
 curl -X POST http://localhost:8081/rest/auth/users/login \
   -H "x-api-key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "alice@example.com",
+    "phone": "+8801700000000",
     "password": "supersecret123"
   }'
 ```
 
 Success returns `{ token, user }`. The token expires in 7 days.
+
+### Login with Phone OTP (Passwordless)
+
+Log in directly using a verified phone number and one-time password (OTP) without needing a password:
+
+```bash
+# 1. Request OTP
+curl -X POST http://localhost:8081/rest/auth/users/send-otp \
+  -H "x-api-key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+8801700000000"
+  }'
+
+# 2. Login using the received OTP
+curl -X POST http://localhost:8081/rest/auth/users/login-otp \
+  -H "x-api-key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+8801700000000",
+    "otp": "123456"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "You are successfully logged in.",
+  "data": {
+    "token": "<JWT>",
+    "user": {
+      "id": "...",
+      "phone": "+8801700000000",
+      "roleName": "user",
+      "status": "active"
+    }
+  }
+}
+```
+
+*Note: This triggers an `auth:login` event upon successful verification.*
 
 ### Current user (me)
 
@@ -143,7 +228,7 @@ curl http://localhost:8081/rest/auth/users/me \
   -H "Authorization: Bearer $JWT"
 ```
 
-### Change password
+### Change password (Authenticated)
 
 ```bash
 curl -X POST http://localhost:8081/rest/auth/users/change-password \
@@ -153,16 +238,60 @@ curl -X POST http://localhost:8081/rest/auth/users/change-password \
   -d '{ "oldPassword": "supersecret123", "newPassword": "newsecret456" }'
 ```
 
-### Forgot password
+### Forgot password (Step 1)
+
+Generates a secure 6-digit OTP code to initiate password recovery via phone or email:
 
 ```bash
 curl -X POST http://localhost:8081/rest/auth/users/forgot-password \
   -H "x-api-key: $API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{ "email": "alice@example.com" }'
+  -d '{ "phone": "+8801700000000" }'
 ```
 
-Returns a generic success message without revealing user existence.
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Verification OTP sent successfully.",
+  "data": {
+    "phone": "+8801700000000"
+  }
+}
+```
+
+*Note: Emits an `auth:otp:send` event with `{ phone: targetPhone, otp, type: 'forgot_password' }`, allowing your notification or SMS service to deliver the code.*
+
+### Reset password with OTP (Step 2)
+
+Validates the OTP and sets a new password (minimum 8 characters):
+
+```bash
+curl -X POST http://localhost:8081/rest/auth/users/reset-password \
+  -H "x-api-key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+8801700000000",
+    "otp": "123456",
+    "newPassword": "myNewSecurePassword123"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Password reset successfully. Please sign in with your new password."
+}
+```
+
+## Extended User Schema Hygiene (`stripInheritedIfNoBase`)
+
+When querying models that extend `Users` (such as `Doctors` or `Staff`):
+- **Clean Responses**: If a record does not have a linked base user account (`baseId` is null/empty), inherited user fields (such as `username`, `password`, `email`) are automatically stripped from all CRUD responses (`GET`, `POST`, `PUT`).
+- **Selective Base Creation**: Creating an extended record only creates a corresponding base user if meaningful user credentials/fields are explicitly provided in the payload, preventing ghost base records.
 
 ## Performance & SSR Optimizations
 

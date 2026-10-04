@@ -4,97 +4,112 @@ export default {
    * @see https://nextra.vercel.app/docs/metadata
    */
   metadata: {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://nextmin.gscodes.dev'),
     title: {
-      default: 'NextMin | The Unified Admin + REST API Framework',
+      default: 'NextMin — Next.js Admin Panel & Schema-Driven REST API Framework',
       template: '%s | NextMin',
     },
     description:
-      'Turn your JSON schema into a production-ready REST API and an elegant Admin Panel. Built with NMAdapter, Socket.io, and React.',
-    // metadataBase can be set to your production docs URL when available
-    // metadataBase: new URL('https://nextmin.airoom.dev/'),
+      'Turn your JSON schema into a production-ready REST API and an instant, reactive React admin dashboard. Features multi-database NMAdapter (PostgreSQL, MySQL, SQLite, MongoDB), real-time Socket.io events, and granular RBAC.',
     keywords: [
-      // Branding & packages
-      'Nextmin',
+      // Primary High-Volume Search Terms
+      'Next.js admin panel',
+      'Next js admin dashboard',
+      'React admin panel',
+      'React admin dashboard',
+      'React admin framework',
+      'schema to REST API',
+      'schema-driven UI',
+      'JSON schema REST API generator',
+      'headless admin framework',
+      'Node.js REST API generator',
+      'React CRUD framework',
+      'Next.js CRUD generator',
+      'auto-generated admin panel',
+      'self-hosted admin dashboard',
+
+      // Alternative & Comparison Queries
+      'Refine alternative',
+      'react-admin alternative',
+      'Strapi alternative for Next.js',
+      'Directus alternative React',
+      'PocketBase Next.js alternative',
+      'Payload CMS alternative',
+
+      // Core Technologies & Features
       '@airoom/nextmin-react',
       '@airoom/nextmin-node',
-      'next js react',
-      'next js admin',
-      'react admin',
-      'save time with next js',
-      'next js admin template',
-
-      // Ecosystem
-      'React',
-      'Next.js',
-      'Node.js',
+      'NextMin',
+      'Next.js 15',
+      'React 19',
       'TypeScript',
-      'Monorepo',
-      'Open Source',
-
-      // Docs & site
-      'Documentation',
-      'MDX',
-      'Nextra',
-
-      // React package (UI)
-      'UI Components',
-      'Component Library',
-      'React Components',
-      'UI Kit',
-      'Tailwind CSS',
-      'HeroUI',
-      'Framer Motion',
-      'Animations',
-      'Google Maps',
-      'Infinite Scroll',
-      'Redux Toolkit',
-      'React Redux',
-      'Hooks',
-      'Forms',
-      'Tables',
-      'Modals',
-
-      // Node package (server)
-      'SDK',
-      'Node SDK',
-      'API SDK',
-      'Socket.io',
-      'WebSocket',
-      'Real-time',
-      'Authentication',
-      'Authorization',
-      'JWT',
-      'JWT Auth',
-      'MongoDB',
-      'Mongoose',
-      'Schemas',
-      'File Upload',
-      'Multer',
-      'AWS S3',
-      'S3 Upload',
-      'Presigned URL',
+      'NMAdapter',
+      'Socket.io real-time admin',
+      'Real-time dashboard',
+      'Role based access control Next.js',
+      'RBAC schema policy',
+      'PostgreSQL admin panel',
+      'MongoDB admin panel',
+      'MySQL admin panel',
+      'SQLite admin panel',
+      'HeroUI admin template',
+      'Tailwind CSS admin',
+      'Dynamic theming Next.js',
+      'Tiptap rich text editor Next.js',
+      'S3 file upload proxy',
+      'Sharp image optimization WebP',
     ],
+    authors: [{ name: 'NextMin Team', url: 'https://nextmin.gscodes.dev' }],
+    creator: 'NextMin',
+    publisher: 'NextMin',
     generator: 'Next.js',
-    applicationName: 'Nextmin',
+    applicationName: 'NextMin',
     appleWebApp: {
-      title: 'Nextmin',
+      title: 'NextMin',
+      statusBarStyle: 'default',
     },
     openGraph: {
-      // https://github.com/vercel/next.js/discussions/50189#discussioncomment-10826632
-      url: './',
-      siteName: 'Nextmin',
+      title: 'NextMin — Next.js Admin Panel & Schema-Driven REST API Framework',
+      description:
+        'Turn your JSON schema into a production-ready REST API and an instant, reactive React admin dashboard with real-time Socket.io and multi-database support.',
+      url: 'https://nextmin.gscodes.dev',
+      siteName: 'NextMin',
       locale: 'en_US',
       type: 'website',
-    },
-    other: {
-      'msapplication-TileColor': '#fff',
+      images: [
+        {
+          url: '/og-image.png',
+          width: 1200,
+          height: 630,
+          alt: 'NextMin — Next.js Admin Panel & Schema-Driven REST API Framework',
+        },
+      ],
     },
     twitter: {
+      card: 'summary_large_image',
+      title: 'NextMin — Next.js Admin Panel & Schema-Driven REST API Framework',
+      description:
+        'Turn your JSON schema into a production-ready REST API and an instant, reactive React admin dashboard.',
       site: 'https://nextmin.gscodes.dev',
+      creator: '@nextmin',
+      images: ['/og-image.png'],
     },
     alternates: {
-      // https://github.com/vercel/next.js/discussions/50189#discussioncomment-10826632
-      canonical: './',
+      canonical: 'https://nextmin.gscodes.dev',
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    other: {
+      'msapplication-TileColor': '#0b0f17',
     },
   },
   /**

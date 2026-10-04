@@ -1,7 +1,7 @@
 ---
-title: Viewer (Drawer)
+title: Record Viewer Drawer — Schema-Driven Full Document Hydration
 sidebarTitle: Viewer (Drawer)
-description: Schema-driven row viewer with a HeroUI Drawer, JSON summarization, baseId merge, and secret masking.
+description: Schema-driven record viewer drawer for NextMin React. Features automatic full-record hydration, HeroUI drawer presentation, JSON summarization, and secret masking.
 ---
 
 # Viewer (Drawer)
@@ -12,10 +12,13 @@ The table now includes a View action that opens a right-side Drawer to display a
 
 - Adds a View (eye) icon to the actions column in list tables
 - Opens a HeroUI Drawer on the right (~50% width on desktop, full width on mobile)
+- **Automatic Full-Record Hydration**: Asynchronously fetches the full document via `api.get(model, id)` with an inline loading spinner. Even if table columns were truncated or omitted via client projections (`select`), the drawer displays 100% of the document's fields.
+- **Clean Extended Schema Hygiene**: If a model extends `Users`, inherited user fields (`username`, `password`, `email`) are automatically omitted if no base user account is linked (`baseId`/`exId` is null).
+- **Intelligent Media & Image Thumbnails**: Recognizes image assets via schema attribute type (`image`, `media`), format, or name patterns (`avatar`, `photo`, `logo`, `cover`, `thumbnail`, `picture`), even when URLs contain custom storage proxy paths or query parameters.
 - Renders field values using your schema order and hides private/system fields
 - Masks any password/secret-like fields (never rendered)
 - If a schema extends a base, and the row contains a hydrated `baseId` object, its fields are merged into the view (link field itself is hidden)
-- Summarizes raw JSON arrays/objects into readable text (e.g., a list of “Chamber — Address, Visiting…”)
+- Summarizes raw JSON arrays/objects into readable text (e.g., a list of “Chamber — Address, Visiting…”).
 
 ## Where it lives
 
